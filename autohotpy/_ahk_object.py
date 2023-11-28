@@ -31,11 +31,11 @@ class AhkObject:
         else:
             self.call(self.__bound_to, *args)
 
-    def _format_args(self, args):
-        if len(args) > 10:
-            raise RuntimeError('Could not call function {self.name}: 10 args maximum')
+    # def _format_args(self, args):
+    #     if len(args) > 10:
+    #         raise RuntimeError('Could not call function {self.name}: 10 args maximum')
 
-        return [self.name] + [str(arg) for arg in args] + [c_void_p()]*(10 - len(args)) + [self.ahk._thread_id]
+    #     return [self.name] + [str(arg) for arg in args] + [c_void_p()]*(10 - len(args)) + [self.ahk._thread_id]
 
     def _format_arg(self, arg):
         if isinstance(arg, CFuncPtr):
