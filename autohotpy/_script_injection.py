@@ -4,6 +4,7 @@ from typing import Any
 
 from ._dtypes import DTypes
 
+
 class Callbacks:
     def __init__(self, **kwargs) -> None:
         self._dict = kwargs
@@ -18,26 +19,27 @@ def addr_of(func) -> int:
         assert val is not None
         return val
     except:
-        print(f'ignoring {func}')
+        print(f"ignoring {func}")
         return 0
 
-def create_user_script(script:tuple[str, ...], f:Callbacks) -> str:
-    s = '\n'.join(line_group for line_group in script)
+
+def create_user_script(script: tuple[str, ...], f: Callbacks) -> str:
+    s = "\n".join(line_group for line_group in script)
     return f"""
         {s}
         DllCall({f.idle}, "cdecl int")
 
     """
 
-def create_injection_script(f:Callbacks) -> str:
-    
 
+def create_injection_script(f: Callbacks) -> str:
     cwd = os.getcwd()
 
-    dtype_enum = '\t\t\t\t\n'.join(f"static {v.name} := {v.value}" for v in DTypes)
-    
-    
-    return (f"""
+    dtype_enum = "\t\t\t\t\n".join(
+        f"static {v.name} := {repr(v.value)}" for v in DTypes
+    )
+
+    return f"""
         #include "{cwd}"
         SetWorkingDir "{cwd}"
         
@@ -63,10 +65,106 @@ def create_injection_script(f:Callbacks) -> str:
             {dtype_enum}
         }}
 
-        _value_from_pybuffer() {{
+        class A_Globals {{
+            static __Get(_ahpy_paramname, _ahpy_itemparams) {{
+                if (_ahpy_itemparams.Length) {{
+                    return %_ahpy_paramname%[_ahpy_itemparams*]
+                }}
+                else {{
+                    return %_ahpy_paramname%
+                }}
+            }}
+
+            static __Set(_ahpy_paramname, _ahpy_itemparams, _ahpy_value) {{
+                global
+                if (_ahpy_itemparams.Length) {{
+                     %_ahpy_paramname%[_ahpy_itemparams*] := _ahpy_value
+                }}
+                else {{
+                    %_ahpy_paramname% := _ahpy_value
+                }}
+            }}
+            
+            static __Call(_ahpy_funcname, _ahpy_funcparams) {{
+                return %_ahpy_funcname%(_ahpy_funcparams*)
+            }}
+
+        }}
+
+        _py_call_ahk_function(param_ptr) {{
+            call_info := JSON.Parse(StrGet(param_ptr))
+            args := call_info['args']
+            for i, v in args {{
+                call_info['args'][i] := _PyCommunicator.value_from_data(v)
+            }}
+            obj := _PyCommunicator.value_from_data(call_info['obj'])
+            method := _PyCommunicator.value_from_data(call_info['method'])
+            try {{
+                result := obj.%method%(args*)
+                result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
+            }}
+            catch Any as err {{
+                if err is not Error {{
+                    err := Error(err)
+                }}
+                result_data := map("success", false, "value", _PyCommunicator.value_to_data(err))
+            }}
+            
+            DllCall(call_info['return_callback'], "str", JSON.Stringify(result_data), "int")
+            return 0
+        }}
+
+        class _PyCommunicator {{
+
+            static __New() {{
+                this.call_ptr := CallbackCreate(_py_call_ahk_function, "F")
+                this.call_threadsafe_ptr := CallbackCreate(_py_call_ahk_function)
+                this.callbacks := Map(
+                    "get_ahk_attr", this.value_to_data(ObjBindMethod(this, "get_ahk_attr")),
+                    "set_ahk_attr", this.value_to_data(ObjBindMethod(this, "set_ahk_attr")),
+                    "globals_ptr", this.value_to_data(A_Globals)["ptr"]
+                    )
+            }}
+            
+            
+
+            static get_ahk_attr(obj, name) {{
+                return obj.%name%
+            }}
+            static set_ahk_attr(obj, name, value) {{
+                obj.%name% := value
+            }}
+
+            static value_from_data(val) {{
+                if val is Map {{
+                    if val["dtype"] == _PyParamTypes.AHK_OBJECT {{
+                        val := ObjFromPtrAddRef(val["ptr"])
+                        return val
+                    }}
+                    if val["dtype"] == _PyParamTypes.INT {{
+                        return Integer(val["value"])
+                    }}
+                    Msgbox 'error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT
+                }}
+                return val
+            }}
+
+            static value_to_data(val) {{
+                if IsObject(val) {{
+                    ptr := ObjPtrAddRef(val)
+                    return map("dtype", _PyParamTypes.AHK_OBJECT, "ptr", String(ptr))
+                }}
+                if val is Integer {{
+                    return map("dtype", _PyParamTypes.INT, "value", String(val))
+                }}
+                
+                return val
+            }}
+            
+
             
         }}
-    
+           
         class PyObject {{
             __New(id) {{
                 this.DefineProp("_py_id", {{Value: id}}) ; set value1
@@ -98,7 +196,7 @@ def create_injection_script(f:Callbacks) -> str:
                 
                 throw Error('fuck')
             }}
-            __Set(attr, val) {{
+            __Set(attr, params, val) {{
                 
             }}
             __Item[params*] {{
@@ -117,6 +215,10 @@ def create_injection_script(f:Callbacks) -> str:
             }}
         }}
 
-        """
+        DllCall({f.give_pointers}
+            ,"ptr", _PyCommunicator.call_ptr
+            ,"ptr", _PyCommunicator.call_threadsafe_ptr
+            ,"str", JSON.Stringify(_PyCommunicator.callbacks)
+            ,"int")
 
-    )
+        """

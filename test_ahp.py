@@ -1,28 +1,12 @@
-from ctypes import *
 import time
-from autohotpy import CLOSE, AhkInstance, ahk_script, config
+from autohotpy import ahk_script
+from autohotpy.ahk_instance import AhkState
 
 
+if __name__ == "__main__":
+    ahk = ahk_script("#include testit.ahk")
 
-# def my_func(thing):
-#     thing = c_double(thing)
-#     print(repr(thing))
-#     print(thing)
-#     print('cool')
-#     return 0
+    print(f"Object Has Base: {ahk.my_hoop.base}")
 
-ahk = ahk_script('#include testit.ahk')
-
-print('thingy', ahk.state)
-
-ahk.wait()
-
-
-print('ready')
-
-ahk.wait(CLOSE)
-
-
-from autohotpy._dtypes import value_from_buffer
-
-buf = (c_char*64)(b'\x00')
+    ahk.run_forever()
+    print("exiting")
