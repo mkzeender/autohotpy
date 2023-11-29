@@ -9,7 +9,7 @@ from autohotpy.ahk_object import AhkScript
 from autohotpy.global_state import thread_state, config, global_state
 
 
-def ahk_script(*script: str, wait_for: AhkState | None = AhkState.IDLE) -> AhkScript:
+def ahk_runstr(*script: str, wait_for: AhkState | None = AhkState.IDLE) -> AhkScript:
     if thread_state.current_instance is None:
         thread_state.current_instance = AhkInstance(*script, wait_for=wait_for)
 
