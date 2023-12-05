@@ -92,7 +92,12 @@ def create_injection_script(f: Callbacks) -> str:
         }}
 
         _py_call_ahk_function(param_ptr) {{
-            call_info := JSON.Parse(StrGet(param_ptr))
+            if param_ptr is String {{
+                call_info := JSON.Parse(param_ptr)
+            }}
+            else {{
+                call_info := JSON.Parse(StrGet(param_ptr))
+            }}
             args := call_info['args']
             for i, v in args {{
                 call_info['args'][i] := _PyCommunicator.value_from_data(v)
@@ -104,7 +109,7 @@ def create_injection_script(f: Callbacks) -> str:
                 result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
             }}
             catch Any as err {{
-                if err is not Error {{
+                if not (err is Error) {{
                     err := Error(err)
                 }}
                 result_data := map("success", false, "value", _PyCommunicator.value_to_data(err))
@@ -220,5 +225,6 @@ def create_injection_script(f: Callbacks) -> str:
             ,"ptr", _PyCommunicator.call_threadsafe_ptr
             ,"str", JSON.Stringify(_PyCommunicator.callbacks)
             ,"int")
+
 
         """

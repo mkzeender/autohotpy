@@ -10,13 +10,13 @@ from ctypes import (
     c_wchar_p,
     c_int64,
 )
+from dataclasses import dataclass
 from enum import StrEnum, auto
 import json
 import os
 import threading
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
-from autohotpy.exceptions import ExitApp
 from ._ahkdll import ahkdll
 from ._script_injection import (
     create_injection_script,
@@ -36,20 +36,23 @@ class AhkState(StrEnum):
     IDLE = auto()
     CLOSED = auto()
     RUNNING = auto()
+    INITIALIZING = auto()
 
 
 _UNSET = object()
 
 
 class AhkInstance:
-    def __init__(self, *script: str, wait_for: AhkState | None = AhkState.IDLE) -> None:
+    def __init__(self, *script) -> None:
         self._references = References()
-        self._str_references = References()
-        self._closed_condition = threading.Condition()
+        thread_state.current_instance = self
+        self._autoexec_condition = threading.Condition()
+        self._job_queue: c_wchar_p | bool = False
+
         self._error = None
         self._exit_code: int | None = None
         self._exit_reason: str = ""
-        self._state: AhkState = AhkState.RUNNING
+        self.state: AhkState = AhkState.INITIALIZING
 
         self._callbacks = Callbacks(
             get=CFUNCTYPE(c_int, c_int64, c_wchar_p, POINTER(c_char * 64))(
@@ -59,7 +62,7 @@ class AhkInstance:
             call=self._call_callback,
             free_obj=self._free_obj_callback,
             exit_app=CFUNCTYPE(c_int, c_wchar_p, c_int64)(self._exit_app_callback),
-            idle=CFUNCTYPE(None)(self._idle_callback),
+            idle=CFUNCTYPE(None)(self._autoexec_thread_callback),
             give_pointers=CFUNCTYPE(c_int, c_uint64, c_uint64, c_wchar_p)(
                 self._set_ahk_func_ptrs
             ),
@@ -75,60 +78,42 @@ class AhkInstance:
         # inject a backend library into the script, for communicating with python
         modded_script = create_injection_script(self._callbacks)
 
-        self._add_script(modded_script, wait=True, execute=True)
+        self._add_script(modded_script, runwait=1)
 
-        if script:
-            self._add_script(
-                create_user_script(script, self._callbacks),
-                execute=True,
-                wait=(wait_for == AhkState.IDLE),
+        self.add_script(*script)
+
+    def add_script(self, *script: str):
+        if thread_state.get_thread_type(self) != "autoexec":
+            raise RuntimeError(
+                "Global-scope ahk statements cannot be run in the middle of a function. Try running this in a different thread."
             )
-        else:
-            with self._closed_condition:
-                self.state = AhkState.IDLE
-                self._closed_condition.notify_all()
+        with (cond := self._autoexec_condition):
+            while self._job_queue is not False or self.state == AhkState.RUNNING:
+                if self.state == AhkState.CLOSED:
+                    raise RuntimeError("Interpreter is already closed")
+                cond.wait(timeout=1)
 
-        if wait_for == AhkState.CLOSED:
-            self.wait(AhkState.CLOSED)
-        elif wait_for == AhkState.IDLE and self.state == AhkState.CLOSED:
-            assert self._exit_code is not None
-            raise ExitApp(self._exit_reason, self._exit_code)
+            # request the old script to end, and wait for it to do so
+            if self.state != AhkState.INITIALIZING:
+                self._job_queue = True
+                cond.notify_all()
+                while self._job_queue is not False:
+                    cond.wait(timeout=1)
 
-    @property
-    def state(self) -> AhkState:
-        return self._state
-
-    @state.setter
-    def state(self, value: AhkState):
-        if self._state == AhkState.CLOSED:
-            return
-        self._state = value
-
-    def add_script(self, *script: str, wait_for: AhkState | None = AhkState.IDLE):
-        # wait for the script to either close or become idle
-        with self._closed_condition:
-            self.wait(AhkState.IDLE)
-            assert self.state == AhkState.IDLE
-
-            # mark the script as running again!
+            # mark script as running again
             self.state = AhkState.RUNNING
-            self._closed_condition.notify_all()
+            cond.notify_all()
 
-        user_script: str = create_user_script(script, self._callbacks)
-        self._add_script(user_script, wait=(wait_for == AhkState.IDLE), execute=True)
+            # run the script
+            user_script: str = create_user_script(script, self._callbacks)
+            self._add_script(user_script, runwait=2)
 
-        if wait_for == AhkState.CLOSED:
-            self.wait(AhkState.CLOSED)
-        elif wait_for == AhkState.IDLE and self.state == AhkState.CLOSED:
-            assert self._exit_code is not None
-            raise ExitApp(self._exit_reason, self._exit_code)
+            # wait for it to pass control back to this thread.
+            while self.state == AhkState.RUNNING:
+                cond.wait(timeout=1)
 
-    def _add_script(
-        self, script: str, *, wait=True, execute=True, starting=False
-    ) -> None:
-        waitexec = 0 if not execute else 1 if wait else 2
-
-        ahkdll.addScript(script, c_int(waitexec), self._thread_id)
+    def _add_script(self, script: str, runwait) -> None:
+        ahkdll.addScript(script, c_int(runwait), self._thread_id)
 
     def ahkReady(self) -> bool:
         return bool(ahkdll.ahkReady(self._thread_id))
@@ -138,15 +123,18 @@ class AhkInstance:
             return True
         elif state != self.state == AhkState.CLOSED:
             assert self._exit_code is not None
+            from autohotpy.exceptions import ExitApp
+
             raise ExitApp(self._exit_reason, self._exit_code)
 
-    def wait(self, wait_for: AhkState = AhkState.IDLE) -> None:
-        with self._closed_condition:
-            while not self._closed_condition.wait_for(
-                lambda: self._match_state(wait_for), timeout=1
-            ):
-                # DONT DELETE, this no-op checks for KeyboardInterrupts if you're in the main thread.
-                pass
+    def run_forever(self) -> None:
+        with (cond := self._autoexec_condition):
+            # indicate to Ahk's main thread that it can go into persistent mode
+            self._job_queue = True
+            self._autoexec_condition.notify_all()
+            while not self.state == AhkState.CLOSED:
+                # Timeout allows for KeyboardInterrupts if you're in the main thread.
+                cond.wait(timeout=1)
 
     def value_from_data(
         self,
@@ -178,9 +166,40 @@ class AhkInstance:
 
         raise TypeError
 
+    def _call_autoexec(self, arg_data: c_wchar_p):
+        cond = self._autoexec_condition
+        with cond:
+            while self._job_queue is not False:
+                cond.wait(timeout=1)
+            self._job_queue = job = arg_data
+            cond.notify_all()
+            while self._job_queue is arg_data:
+                cond.wait(timeout=1)
+
+    def _autoexec_thread_callback(self):
+        with (cond := self._autoexec_condition):
+            self.state = AhkState.IDLE
+            cond.notify_all()
+
+            while True:
+                cond.wait_for(lambda: self._job_queue is not False)
+                job: bool | c_wchar_p = self._job_queue
+
+                assert job is not False
+
+                # set to True if something has been appended to the script.
+                if job is True:
+                    self._job_queue = False
+                    cond.notify_all()
+                    return
+                else:
+                    self._call_func(job)
+                    self._job_queue = False
+                    cond.notify_all()
+
     def call_method(
         self,
-        obj: AhkObject,
+        obj: AhkObject | None,
         method: str,
         args: tuple,
         kwargs: dict[str, Any],
@@ -202,7 +221,8 @@ class AhkInstance:
         elif thread_type == "external":
             _call = self._call_func_threadsafe
         else:  # thread_type == 'autoexec'
-            _call = self._call_func  # TODO: change mainthread behavior
+            _call = self._call_autoexec
+            # _call = self._call_func
 
         obj_or_globals = (
             dict(dtype=DTypes.AHK_OBJECT, ptr=self.globals_ptr)
@@ -233,7 +253,9 @@ class AhkInstance:
                 ret_val["value"], bind_to=bind_to, bound_method_name=bound_method_name
             )
         else:
-            raise RuntimeError
+            from autohotpy.exceptions import throw
+
+            throw(ret_val["value"])
 
     def get_attr(
         self,
@@ -277,17 +299,12 @@ class AhkInstance:
         ...
 
     def _exit_app_callback(self, reason, code):
-        with self._closed_condition:
+        with self._autoexec_condition:
             self._exit_code = code
             self._exit_reason = reason
             self.state = AhkState.CLOSED
-            self._closed_condition.notify_all()
+            self._autoexec_condition.notify_all()
             return 0
-
-    def _idle_callback(self):
-        with self._closed_condition:
-            self.state = AhkState.IDLE
-            self._closed_condition.notify_all()
 
     def _set_ahk_func_ptrs(
         self, call_ptr: int, call_threadsafe_ptr: int, callbacks: str

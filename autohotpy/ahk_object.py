@@ -83,4 +83,4 @@ class AhkScript(AhkObject):
         super().__init__(inst, pointer=inst.globals_ptr)
 
     def run_forever(self):
-        self._ahk_instance.wait(AhkState.CLOSED)
+        self._ahk_instance.run_forever()
