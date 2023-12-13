@@ -1,4 +1,14 @@
-from ctypes import cast, c_void_p
+from ctypes import (
+    cast,
+    c_void_p,
+    CFUNCTYPE,
+    c_int,
+    c_int64,
+    c_wchar_p,
+    POINTER,
+    c_char,
+    c_uint64,
+)
 import os
 from typing import Any
 
@@ -6,8 +16,20 @@ from ._dtypes import DTypes
 
 
 class Callbacks:
-    def __init__(self, **kwargs) -> None:
-        self._dict = kwargs
+    def __init__(self, inst) -> None:
+        self._dict = dict(
+            get=CFUNCTYPE(c_int, c_int64, c_wchar_p, c_char * 64)(
+                inst._get_attr_callback
+            ),
+            set=inst._set_attr_callback,
+            call=inst._call_callback,
+            free_obj=inst._free_obj_callback,
+            exit_app=CFUNCTYPE(c_int, c_wchar_p, c_int64)(inst._exit_app_callback),
+            idle=CFUNCTYPE(None)(inst._autoexec_thread_callback),
+            give_pointers=CFUNCTYPE(c_int, c_uint64, c_uint64, c_wchar_p)(
+                inst._set_ahk_func_ptrs
+            ),
+        )
 
     def __getattr__(self, __name: str) -> int:
         return addr_of(self._dict[__name])

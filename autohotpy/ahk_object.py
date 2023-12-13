@@ -76,11 +76,3 @@ class AhkBoundProp(AhkObject):
         return self._ahk_instance.call_method(
             self._ahk_bound_to, self._ahk_method_name, args, kwargs
         )
-
-
-class AhkScript(AhkObject):
-    def __init__(self, inst: AhkInstance) -> None:
-        super().__init__(inst, pointer=inst.globals_ptr)
-
-    def run_forever(self):
-        self._ahk_instance.run_forever()

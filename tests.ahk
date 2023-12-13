@@ -24,3 +24,9 @@ if ([1].Length) {
 else {
     MsgBox 'no'
 }
+
+^h::
+{
+    static wut := 10
+    MsgBox(wut)
+}

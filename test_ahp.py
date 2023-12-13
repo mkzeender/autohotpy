@@ -4,12 +4,19 @@ from autohotpy import ahk_runstr
 from autohotpy.ahk_instance import AhkState
 
 
-if __name__ == "__main__":
-    ahk = ahk_runstr("#include testit.ahk")
-    a = time.perf_counter()
-    for i in range(5000):
-        ahk.Sin(10)
-    b = time.perf_counter()
-    ahk.MsgBox(f"{(b-a)} seconds")
+def main():
+    ahk = ahk_runstr()
+
+    ahk['::shit::\n{MsgBox("language")\n}']
+
+    ahk["b"::](ahk.MsgBox)
+
+    print(ahk.MsgBox("test_ahp"))
+
+    ahk["^q" :: ahk.ExitApp]
+
     ahk.run_forever()
-    print("exiting")
+
+
+if __name__ == "__main__":
+    main()
