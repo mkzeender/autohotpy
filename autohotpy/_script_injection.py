@@ -26,7 +26,7 @@ class Callbacks:
             free_obj=inst._free_obj_callback,
             exit_app=CFUNCTYPE(c_int, c_wchar_p, c_int64)(inst._exit_app_callback),
             idle=CFUNCTYPE(None)(inst._autoexec_thread_callback),
-            give_pointers=CFUNCTYPE(c_int, c_uint64, c_uint64, c_wchar_p)(
+            give_pointers=CFUNCTYPE(c_int, c_uint64, c_uint64, c_uint64, c_wchar_p)(
                 inst._set_ahk_func_ptrs
             ),
         )
@@ -146,16 +146,17 @@ def create_injection_script(f: Callbacks) -> str:
         _py_get_ahk_global(name_p, ret_callback) {{
             name := StrGet(name_p)
             try
-                value := A_Globals.%name%
-            catch UnsetError
-                return 0
+                value := %name%
+            catch
+                return 1
+            if (value == '')
+                return 3
             if (HasBase(value, Func) or HasBase(value, Class))
-                value_data := map('dtype', _PyParamTypes.AHK_IMMORTAL, 'ptr', String(ObjPtrAddRef(val)))
+                value_data := map('dtype', _PyParamTypes.AHK_IMMORTAL, 'ptr', String(ObjPtrAddRef(value)))
             else
                 value_data := _PyCommunicator.value_to_data(value)
-            result_data := map("success", true, "value", value_data)
-            DllCall(ret_callback, "str", JSON.Stringify(result_data), "int")
-            return 1
+            DllCall(ret_callback, "str", JSON.Stringify(value_data), "int")
+            return 2
         }}
 
         class _PyCommunicator {{

@@ -3,6 +3,7 @@
 thing := '12345🏳️‍⚧️'
 
 my_float := 1.2
+my_empty := ''
 
 class Hoopla {
     static my_static() {

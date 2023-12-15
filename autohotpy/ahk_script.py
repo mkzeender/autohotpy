@@ -21,7 +21,7 @@ Func = TypeVar("Func", bound=Callable, covariant=True)
 
 class AhkScript(AhkObject):
     def __init__(self, inst: AhkInstance) -> None:
-        super().__init__(inst, pointer=inst.globals_ptr)
+        super().__init__(inst, pointer=None)
 
     def run_forever(self):
         self._ahk_instance.run_forever()

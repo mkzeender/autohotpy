@@ -11,10 +11,10 @@ class AhkObject:
     def __init__(
         self,
         inst: AhkInstance,
-        pointer: int,
+        pointer: int | None,
     ) -> None:
-        self._ahk_instance: AhkInstance = inst
-        self._ahk_ptr: int = pointer
+        self._ahk_instance = inst
+        self._ahk_ptr = pointer
 
     def call(self, *args, **kwargs) -> Any:
         return self._ahk_instance.call_method(self, "Call", args, kwargs)

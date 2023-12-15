@@ -18,6 +18,11 @@ err.What := 's'
 err.File := A_ScriptDir '\autostart.py'
 err.Line := 10
 
+try
+    MsgBox(%'wooooo'%)
+catch UnsetError as e
+    MsgBox type(e)
+
 if ([1].Length) {
     MsgBox 'yes'
 }

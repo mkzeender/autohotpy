@@ -221,7 +221,6 @@ class AhkInstance:
             _call = self._call_func_threadsafe
         else:  # thread_type == 'autoexec'
             _call = self._call_autoexec
-            # _call = self._call_func
 
         obj_or_globals = (
             dict(dtype=DTypes.AHK_OBJECT, ptr=self.globals_ptr)
@@ -243,9 +242,18 @@ class AhkInstance:
             )
         )
 
-        _call(arg_data)  # sets ret_val
-        ret_callback.argtypes
-        arg_data.value
+        status = _call(arg_data)  # sets ret_val
+
+        if status == 0:
+            from autohotpy.exceptions import ExitApp
+
+            raise ExitApp("unknown", 1)
+
+        if status == 1:
+            raise RuntimeError("an unknown error occurred")
+
+        if status == 3:
+            return ""
 
         if ret_val["success"]:
             return self.value_from_data(
@@ -260,7 +268,7 @@ class AhkInstance:
         self,
         obj: AhkObject,
         name: str,
-    ):
+    ) -> Any:
         from .ahk_script import AhkScript
 
         if isinstance(obj, AhkScript):
@@ -272,11 +280,20 @@ class AhkInstance:
                 ret_val = json.loads(val_data)
                 return 0
 
-            success = self._get_global_var(name, ret_callback)
-            if success:
+            status = self._get_global_var(name, ret_callback)
+
+            if status == 3:
+                return ""
+            if status == 2:
                 return self.value_from_data(ret_val)
+            elif status == 0:
+                from exceptions import ExitApp
+
+                raise ExitApp("unknown", 1)
             else:
-                raise AttributeError(f"Global variable {name} could not be found")
+                raise AttributeError(
+                    f'"{name}" is not a recognized function, class, or variable'
+                )
         return self.call_method(
             self._get_ahk_attr,
             "Call",
