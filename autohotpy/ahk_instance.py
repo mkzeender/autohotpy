@@ -261,6 +261,22 @@ class AhkInstance:
         obj: AhkObject,
         name: str,
     ):
+        from .ahk_script import AhkScript
+
+        if isinstance(obj, AhkScript):
+            ret_val = None
+
+            @CFUNCTYPE(c_int, c_wchar_p)
+            def ret_callback(val_data: str):
+                nonlocal ret_val
+                ret_val = json.loads(val_data)
+                return 0
+
+            success = self._get_global_var(name, ret_callback)
+            if success:
+                return self.value_from_data(ret_val)
+            else:
+                raise AttributeError(f"Global variable {name} could not be found")
         return self.call_method(
             self._get_ahk_attr,
             "Call",
@@ -324,12 +340,19 @@ class AhkInstance:
             return 0
 
     def _set_ahk_func_ptrs(
-        self, call_ptr: int, call_threadsafe_ptr: int, callbacks: str
+        self,
+        call_ptr: int,
+        call_threadsafe_ptr: int,
+        get_global_var: int,
+        callbacks: str,
     ):
         CALLERTYPE = CFUNCTYPE(c_int, c_wchar_p)
         self._call_func: Callable[[c_wchar_p], int] = CALLERTYPE(call_ptr)
         self._call_func_threadsafe: Callable[[c_wchar_p], int] = CALLERTYPE(
             call_threadsafe_ptr
+        )
+        self._get_global_var = CFUNCTYPE(c_int, c_wchar_p, CFUNCTYPE(c_int, c_wchar_p))(
+            get_global_var
         )
 
         callback_data = json.loads(callbacks)

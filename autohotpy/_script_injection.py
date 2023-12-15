@@ -128,6 +128,8 @@ def create_injection_script(f: Callbacks) -> str:
             method := _PyCommunicator.value_from_data(call_info['method'])
             try {{
                 result := obj.%method%(args*)
+                if (result == '')
+                    return 3
                 result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
             }}
             catch Any as err {{
@@ -138,7 +140,22 @@ def create_injection_script(f: Callbacks) -> str:
             }}
             
             DllCall(call_info['return_callback'], "str", JSON.Stringify(result_data), "int")
-            return 0
+            return 2
+        }}
+
+        _py_get_ahk_global(name_p, ret_callback) {{
+            name := StrGet(name_p)
+            try
+                value := A_Globals.%name%
+            catch UnsetError
+                return 0
+            if (HasBase(value, Func) or HasBase(value, Class))
+                value_data := map('dtype', _PyParamTypes.AHK_IMMORTAL, 'ptr', String(ObjPtrAddRef(val)))
+            else
+                value_data := _PyCommunicator.value_to_data(value)
+            result_data := map("success", true, "value", value_data)
+            DllCall(ret_callback, "str", JSON.Stringify(result_data), "int")
+            return 1
         }}
 
         class _PyCommunicator {{
@@ -146,6 +163,7 @@ def create_injection_script(f: Callbacks) -> str:
             static __New() {{
                 this.call_ptr := CallbackCreate(_py_call_ahk_function, "F")
                 this.call_threadsafe_ptr := CallbackCreate(_py_call_ahk_function)
+                this.get_global_ptr := CallbackCreate(_py_get_ahk_global, "F")
                 this.callbacks := Map(
                     "get_ahk_attr", this.value_to_data(ObjBindMethod(this, "get_ahk_attr")),
                     "set_ahk_attr", this.value_to_data(ObjBindMethod(this, "set_ahk_attr")),
@@ -245,6 +263,7 @@ def create_injection_script(f: Callbacks) -> str:
         DllCall({f.give_pointers}
             ,"ptr", _PyCommunicator.call_ptr
             ,"ptr", _PyCommunicator.call_threadsafe_ptr
+            ,"ptr", _PyCommunicator.get_global_ptr
             ,"str", JSON.Stringify(_PyCommunicator.callbacks)
             ,"int")
 

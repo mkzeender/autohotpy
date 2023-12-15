@@ -11,6 +11,8 @@ class DTypes(StrEnum):
     FLOAT = auto()
     STR = auto()
     AHK_OBJECT = auto()
+    AHK_IMMORTAL = auto()
     PY_OBJECT = auto()
+    PY_IMMORTAL = auto()
     CLASS = auto()
     ERROR = auto()
