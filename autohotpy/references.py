@@ -3,9 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from autohotpy.ahk_instance import AhkInstance
-
 
 @dataclass(slots=True)
 class RefWrapper:
@@ -15,7 +12,9 @@ class RefWrapper:
     def __eq__(self, other: RefWrapper | int) -> bool:
         if isinstance(other, int):
             return id(self.value) == other
-        return id(self.value) == other.ptr
+        elif isinstance(other, RefWrapper):
+            return id(self.value) == other.ptr
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash(id(self.value))
@@ -26,10 +25,8 @@ class RefWrapper:
 
 
 class References:
-    __slots__ = ("_dict",)
-
     def __init__(self) -> None:
-        self._dict: dict[int, RefWrapper]
+        self._dict: dict[int, RefWrapper] = {}
 
     def add(self, obj):
         if id(obj) in self._dict:
@@ -44,37 +41,47 @@ class References:
     def decrement(self, obj):
         ref = self._dict[id(obj)]
         ref.count -= 1
-        if ref.count == 0:
+        if ref.count <= 0:
             del self._dict[id(obj)]
 
-    def get(self, ptr):
+    def get(self, ptr: int):
         return self._dict[ptr].value
+
+    def __contains__(self, ptr: int):
+        return ptr in self._dict
+
+
+class Immortals(References):
+    def add(self, obj):
+        if id(obj) not in self._dict:
+            self._dict[id(obj)] = RefWrapper(obj, 1)
+
+    def decrement(self, obj):
+        pass
 
 
 class ReferenceKeeper:
     def __init__(self) -> None:
         self.references = References()
-        self.immortals = set()
+        self.immortals = References()
 
-    def py_obj_to_ptr_add_ref(self, obj) -> int:
-        ref = RefWrapper(obj)
-        if ref not in self.immortals:
-            self.references.add(ref)
-        return ref.ptr
+    def obj_to_ptr_add_ref(self, obj) -> int:
+        if id(obj) not in self.immortals:
+            self.references.add(obj)
+        return id(obj)
 
-    def py_obj_to_ptr(self, obj) -> int:
-        return RefWrapper(obj).ptr
+    def obj_to_ptr(self, obj) -> int:
+        return id(obj)
 
-    def py_obj_to_immortal_ptr(self, obj) -> int:
-        ref = RefWrapper(obj)
-        self.immortals.add(ref)
-        self.references.remove(ref)
+    def obj_to_immortal_ptr(self, obj) -> int:
+        self.immortals.add(obj)
+        self.references.remove(obj)
 
-        return ref.ptr
+        return id(obj)
 
-    def py_obj_from_ptr(self, ptr: int) -> Any:
+    def obj_from_ptr(self, ptr: int) -> Any:
         return self.references.get(ptr)
 
-    def py_obj_free(self, ptr: int):
+    def obj_free(self, ptr: int):
         if ptr not in self.immortals:
             self.references.decrement(ptr)

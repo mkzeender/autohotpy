@@ -1,26 +1,20 @@
 from __future__ import annotations
-
-from ctypes import CFUNCTYPE, c_int, c_uint, c_wchar_p
+from typing import Any, Callable
 
 from enum import StrEnum, auto
-import json
 import os
 import threading
-from typing import TYPE_CHECKING, Any, Callable
+from ctypes import c_int, c_uint, c_wchar_p
+from autohotpy.ahk_obj_factory import AhkObjFactory
 
-from ._ahkdll import ahkdll
-from ._script_injection import (
-    create_injection_script,
-    create_user_script,
-    Callbacks,
-    addr_of,
-)
-from .references import ReferenceKeeper
-from ._dtypes import DTypes
+from autohotpy.ahk_object import AhkBoundProp, AhkObject
+from autohotpy.ahk_script import AhkScript
+from autohotpy.communicator import Communicator
+from autohotpy.communicator.hotkey_factory import HotkeyFactory
+from autohotpy.exceptions import ExitApp, throw
+from .communicator.ahkdll import ahkdll
+
 from .global_state import thread_state
-
-if TYPE_CHECKING:
-    from .ahk_object import AhkObject
 
 
 class AhkState(StrEnum):
@@ -32,7 +26,6 @@ class AhkState(StrEnum):
 
 class AhkInstance:
     def __init__(self, *script) -> None:
-        self._ahk_communicator = ReferenceKeeper()
         thread_state.current_instance = self
         self._autoexec_condition = threading.Condition()
         self._job_queue: c_wchar_p | bool = False
@@ -42,9 +35,8 @@ class AhkInstance:
         self._exit_reason: str = ""
         self.state: AhkState = AhkState.INITIALIZING
 
-        self._callbacks = Callbacks(self)
-
-        # starting ahk will change the working directory (for some reason), so we save and restore it
+        # starting ahk will change the working directory (for some reason)
+        # so we save and restore it
         cwd = os.getcwd()
 
         self._thread_id = c_uint(ahkdll.NewThread("Persistent", "", "", c_int(1)))
@@ -52,8 +44,12 @@ class AhkInstance:
 
         os.chdir(cwd)
 
+        self.communicator = Communicator(
+            on_idle=self._autoexec_thread_callback, on_exit=self._exit_app_callback
+        )
+
         # inject a backend library into the script, for communicating with python
-        modded_script = create_injection_script(self._callbacks)
+        modded_script = self.communicator.create_init_script()
 
         self._add_script(modded_script, runwait=1)
 
@@ -82,7 +78,7 @@ class AhkInstance:
             cond.notify_all()
 
             # run the script
-            user_script: str = create_user_script(script, self._callbacks)
+            user_script: str = self.communicator.create_user_script(script)
             self._add_script(user_script, runwait=2)
 
             # wait for it to pass control back to this thread.
@@ -92,38 +88,15 @@ class AhkInstance:
     def _add_script(self, script: str, runwait) -> None:
         ahkdll.addScript(script, c_int(runwait), self._thread_id)
 
-    def add_hotkey_or_hotstring(self, sequence: str, func: Callable | AhkObject | str):
-        from autohotpy.ahk_object import AhkObject
-
-        if isinstance(func, AhkObject):
-            ptr = func._ahk_ptr
-
-            script = f"""{sequence}::
-                {{
-                    static obj := ObjFromPtrAddRef({ptr})
-                    obj()
-                }}"""
-
-        elif isinstance(func, str):
-            script = f"{sequence}::{func}"
-
-        elif callable(func):  # TODO
-            raise NotImplementedError
-        else:
-            raise TypeError
-
-        self.add_script(script)
-
-    def ahkReady(self) -> bool:
-        return bool(ahkdll.ahkReady(self._thread_id))
+    def add_hotkey(self, factory: HotkeyFactory):
+        factory.inst = self
+        factory.create()
 
     def _match_state(self, state):
         if self.state == state:
             return True
         elif state != self.state == AhkState.CLOSED:
             assert self._exit_code is not None
-            from autohotpy.exceptions import ExitApp
-
             raise ExitApp(self._exit_reason, self._exit_code)
 
     def run_forever(self) -> None:
@@ -134,36 +107,6 @@ class AhkInstance:
             while not self.state == AhkState.CLOSED:
                 # Timeout allows for KeyboardInterrupts if you're in the main thread.
                 cond.wait(timeout=1)
-
-    def value_from_data(
-        self,
-        data,
-        bind_to: AhkObject | None = None,
-        bound_method_name: str = "",
-    ) -> Any:
-        from .ahk_object import AhkObject, AhkBoundProp
-
-        if isinstance(data, dict):
-            if data["dtype"] == DTypes.AHK_OBJECT:
-                if bind_to is None:
-                    return AhkObject(self, data["ptr"])
-                else:
-                    return AhkBoundProp(self, data["ptr"], bind_to, bound_method_name)
-
-            if data["dtype"] == DTypes.INT:
-                return int(data["value"])
-        else:
-            return data
-
-    def value_to_data(self, value):
-        from .ahk_object import AhkObject
-
-        if isinstance(value, AhkObject):
-            return dict(dtype=DTypes.AHK_OBJECT.value, ptr=value._ahk_ptr)
-        if type(value) in (bool, int, float, str):
-            return value
-
-        raise TypeError
 
     def _call_autoexec(self, arg_data: c_wchar_p):
         cond = self._autoexec_condition
@@ -192,7 +135,7 @@ class AhkInstance:
                     cond.notify_all()
                     return
                 else:
-                    self._call_func(job)
+                    self.communicator.call_func(job)
                     self._job_queue = False
                     cond.notify_all()
 
@@ -201,152 +144,32 @@ class AhkInstance:
         obj: AhkObject | None,
         method: str,
         args: tuple,
-        kwargs: dict[str, Any],
-        bind_to: AhkObject | None = None,
-        bound_method_name: str = "",
+        kwargs: dict[str, Any] | None = None,
+        factory: AhkObjFactory | None = None,
     ) -> Any:
-        ret_val: Any = None
-
-        @CFUNCTYPE(c_int, c_wchar_p)
-        def ret_callback(val_data: str):
-            nonlocal ret_val
-            ret_val = json.loads(val_data)
-            return 0
+        if factory is None:
+            factory = AhkObjFactory()
+        factory.inst = self
 
         thread_type = thread_state.get_thread_type(self)
-
         if thread_type == "ahk":
-            _call = self._call_func
+            call = self.communicator.call_func
         elif thread_type == "external":
-            _call = self._call_func_threadsafe
+            call = self.communicator.call_func_threadsafe
         else:  # thread_type == 'autoexec'
-            _call = self._call_autoexec
+            call = self._call_autoexec
 
-        obj_or_globals = (
-            dict(dtype=DTypes.AHK_OBJECT, ptr=self.globals_ptr)
-            if obj is None
-            else self.value_to_data(obj)
-        )
+        return self.communicator.call_method(obj, method, args, kwargs, factory, call)
 
-        arg_data = c_wchar_p(
-            json.dumps(
-                dict(
-                    obj=obj_or_globals,
-                    method=self.value_to_data(method),
-                    args=[self.value_to_data(arg) for arg in args],
-                    kwargs={
-                        key: self.value_to_data(val) for key, val in kwargs.items()
-                    },
-                    return_callback=addr_of(ret_callback),
-                )
-            )
-        )
-
-        status = _call(arg_data)  # sets ret_val
-
-        if status == 0:
-            from autohotpy.exceptions import ExitApp
-
-            raise ExitApp("unknown", 1)
-
-        if status == 1:
-            raise RuntimeError("an unknown error occurred")
-
-        if status == 3:
-            return ""
-
-        if ret_val["success"]:
-            return self.value_from_data(
-                ret_val["value"], bind_to=bind_to, bound_method_name=bound_method_name
-            )
-        else:
-            from autohotpy.exceptions import throw
-
-            throw(ret_val["value"])
-
-    def get_attr(
-        self,
-        obj: AhkObject,
-        name: str,
-    ) -> Any:
-        from .ahk_script import AhkScript
-
+    def get_attr(self, obj: Any, name: str) -> Any:
         if isinstance(obj, AhkScript):
-            ret_val = None
-
-            @CFUNCTYPE(c_int, c_wchar_p)
-            def ret_callback(val_data: str):
-                nonlocal ret_val
-                ret_val = json.loads(val_data)
-                return 0
-
-            status = self._get_global_var(name, ret_callback)
-
-            if status == 3:
-                return ""
-            if status == 2:
-                return self.value_from_data(ret_val)
-            elif status == 0:
-                from exceptions import ExitApp
-
-                raise ExitApp("unknown", 1)
-            else:
-                raise AttributeError(
-                    f'"{name}" is not a recognized function, class, or variable'
-                )
-        return self.call_method(
-            self._get_ahk_attr,
-            "Call",
-            (obj, name),
-            {},
-            bind_to=obj,
-            bound_method_name=name,
-        )
+            factory = None
+        else:
+            factory = AhkObjFactory(obj, name)
+        return self.call_method(None, "_py_get_ahk_attr", (obj, name), None, factory)
 
     def set_attr(self, obj: Any, name: str, value: Any):
-        return self._set_ahk_attr(obj, name, value)
-
-    def _call_py_method(self, call_inf_json: str):
-        call_info = json.loads(call_inf_json)
-
-        args = [self.value_from_data(arg) for arg in call_info["args"]]
-        obj = self.value_from_data(call_info["obj"])
-        method = self.value_from_data(call_info["method"])
-
-        result = getattr(obj, method)(*args)
-
-        if result is not None:
-            result_data = json.dumps(
-                {"success": True, "value": self.value_to_data(result)}
-            )
-            CFUNCTYPE(c_int, c_wchar_p).from_address(call_info["return_callback"])(
-                result_data
-            )
-
-    def _get_attr_callback(self, obj_id: c_int, attr: c_wchar_p, bytecount=-1):
-        # obj = self._references[obj_id.value]
-        # attr_val = attr.value
-        # assert attr_val is not None
-        # if not hasattr(obj, attr_val):
-        #     return -1
-        # gotten = getattr(obj, attr_val)
-        # if gotten is None:
-        #     return 0
-        # if isinstance(gotten, (str, int, float)):
-        #     gotten = str(gotten)
-        #     assert self._str_reference is None
-        #     self._str_reference = gotten
-        #     return len(gotten)
-        ...
-
-    def _set_attr_callback(self):
-        ...
-
-    def _call_callback(self):
-        ...
-
-    def _free_obj_callback(self):
-        ...
+        return self.call_method(None, "_py_set_ahk_attr", (obj, name, value))
 
     def _exit_app_callback(self, reason, code):
         with self._autoexec_condition:
@@ -355,26 +178,3 @@ class AhkInstance:
             self.state = AhkState.CLOSED
             self._autoexec_condition.notify_all()
             return 0
-
-    def _set_ahk_func_ptrs(
-        self,
-        call_ptr: int,
-        call_threadsafe_ptr: int,
-        get_global_var: int,
-        callbacks: str,
-    ):
-        CALLERTYPE = CFUNCTYPE(c_int, c_wchar_p)
-        self._call_func: Callable[[c_wchar_p], int] = CALLERTYPE(call_ptr)
-        self._call_func_threadsafe: Callable[[c_wchar_p], int] = CALLERTYPE(
-            call_threadsafe_ptr
-        )
-        self._get_global_var = CFUNCTYPE(c_int, c_wchar_p, CFUNCTYPE(c_int, c_wchar_p))(
-            get_global_var
-        )
-
-        callback_data = json.loads(callbacks)
-        self.globals_ptr = self.value_from_data(callback_data["globals_ptr"])
-        self._set_ahk_attr = self.value_from_data(callback_data["set_ahk_attr"])
-        self._get_ahk_attr = self.value_from_data(callback_data["get_ahk_attr"])
-
-        return 0

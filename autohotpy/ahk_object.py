@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, Iterable, Iterator
+from typing import Any, TYPE_CHECKING, Iterator
 
 
-from autohotpy.ahk_instance import AhkInstance, AhkState
+if TYPE_CHECKING:
+    from autohotpy.ahk_instance import AhkInstance
 
 
 class AhkObject:

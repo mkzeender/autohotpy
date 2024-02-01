@@ -1,21 +1,21 @@
 import math
 import time
 from autohotpy import ahk_runstr
-from autohotpy.ahk_instance import AhkState
 
 
 def main():
     ahk = ahk_runstr("#include testit.ahk")
 
-    ahk['::shit::\n{MsgBox("language")\n}']
+    print("starting...")
 
-    ahk["b"::](ahk.MsgBox)
+    ahk.my_py_thing = ["hoo", "wut"]
 
-    print(ahk.MsgBox("test_ahp"))
-    print(ahk.my_empty)
+    print(ahk.my_py_thing)
 
     ahk["^q" :: ahk.ExitApp]
+    ahk["^h" :: lambda: print("hello world")]
 
+    print("idling...")
     ahk.run_forever()
 
 

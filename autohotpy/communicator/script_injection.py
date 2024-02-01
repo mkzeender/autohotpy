@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ctypes import (
     cast,
     c_void_p,
@@ -5,34 +6,41 @@ from ctypes import (
     c_int,
     c_int64,
     c_wchar_p,
-    POINTER,
     c_char,
     c_uint64,
 )
 import os
-from typing import Any
+from typing import TYPE_CHECKING
+from .dtypes import DTypes
 
-from ._dtypes import DTypes
+if TYPE_CHECKING:
+    from autohotpy.communicator import Communicator
 
 
 class Callbacks:
-    def __init__(self, inst) -> None:
+    def __init__(self, comm: Communicator) -> None:
         self._dict = dict(
             get=CFUNCTYPE(c_int, c_int64, c_wchar_p, c_char * 64)(
-                inst._get_attr_callback
+                comm._get_attr_callback
             ),
-            set=inst._set_attr_callback,
-            call=inst._call_callback,
-            free_obj=inst._free_obj_callback,
-            exit_app=CFUNCTYPE(c_int, c_wchar_p, c_int64)(inst._exit_app_callback),
-            idle=CFUNCTYPE(None)(inst._autoexec_thread_callback),
-            give_pointers=CFUNCTYPE(c_int, c_uint64, c_uint64, c_uint64, c_wchar_p)(
-                inst._set_ahk_func_ptrs
-            ),
+            set=comm.set_attr_callback,
+            call=comm.call_callback,
+            free_obj=comm.free_obj_callback,
+            exit_app=CFUNCTYPE(c_int, c_wchar_p, c_int64)(comm.on_exit),
+            idle=CFUNCTYPE(None)(comm.on_idle),
+            give_pointers=CFUNCTYPE(
+                c_int, c_uint64, c_uint64, c_uint64, c_uint64, c_uint64
+            )(comm._set_ahk_func_ptrs),
         )
 
     def __getattr__(self, __name: str) -> int:
         return addr_of(self._dict[__name])
+
+    def create_init_script(self):
+        return create_injection_script(self)
+
+    def create_user_script(self, script):
+        return create_user_script(script, self)
 
 
 def addr_of(func) -> int:
@@ -128,8 +136,6 @@ def create_injection_script(f: Callbacks) -> str:
             method := _PyCommunicator.value_from_data(call_info['method'])
             try {{
                 result := obj.%method%(args*)
-                if (result == '')
-                    return 3
                 result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
             }}
             catch Any as err {{
@@ -159,29 +165,30 @@ def create_injection_script(f: Callbacks) -> str:
             return 2
         }}
 
+        _py_get_ahk_attr(obj, name) {{
+            return obj.%name%
+        }}
+        
+        _py_set_ahk_attr(obj, name, value) {{
+                obj.%name% := value
+            }}
+
         class _PyCommunicator {{
 
             static __New() {{
                 this.call_ptr := CallbackCreate(_py_call_ahk_function, "F")
                 this.call_threadsafe_ptr := CallbackCreate(_py_call_ahk_function)
                 this.get_global_ptr := CallbackCreate(_py_get_ahk_global, "F")
+                this.free_obj_ptr := CallbackCreate(ObjRelease, "F")
+                this.globals_ptr := this.value_to_data(A_Globals)["ptr"]
                 this.callbacks := Map(
                     "get_ahk_attr", this.value_to_data(ObjBindMethod(this, "get_ahk_attr")),
-                    "set_ahk_attr", this.value_to_data(ObjBindMethod(this, "set_ahk_attr")),
-                    "globals_ptr", this.value_to_data(A_Globals)["ptr"]
+                    "set_ahk_attr", this.value_to_data(ObjBindMethod(this, "set_ahk_attr"))
                     )
             }}
             
-            
-
-            static get_ahk_attr(obj, name) {{
-                return obj.%name%
-            }}
-            static set_ahk_attr(obj, name, value) {{
-                obj.%name% := value
-            }}
-
             static value_from_data(val) {{
+                
                 if val is Map {{
                     if val["dtype"] == _PyParamTypes.AHK_OBJECT {{
                         val := ObjFromPtrAddRef(val["ptr"])
@@ -190,12 +197,19 @@ def create_injection_script(f: Callbacks) -> str:
                     if val["dtype"] == _PyParamTypes.INT {{
                         return Integer(val["value"])
                     }}
+                    if val["dtype"] == _PyParamTypes.PY_OBJECT {{
+                        return PyObject(val["ptr"])
+                    }}
                     Msgbox 'error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT
                 }}
                 return val
             }}
 
             static value_to_data(val) {{
+                if val is PyObject {{
+                    ptr := val._py_id
+                    return map("dtype", _PyParamTypes.PY_OBJECT, "ptr", String(ptr))
+                }}
                 if IsObject(val) {{
                     ptr := ObjPtrAddRef(val)
                     return map("dtype", _PyParamTypes.AHK_OBJECT, "ptr", String(ptr))
@@ -240,7 +254,7 @@ def create_injection_script(f: Callbacks) -> str:
                 DllCall({f.get},"int64", this._py_id, "str", attr, "ptr", return_data, "Cdecl int")
                 
                 
-                throw Error('fuck')
+                throw Error('Failed to get attribute')
             }}
             __Set(attr, params, val) {{
                 
@@ -265,7 +279,8 @@ def create_injection_script(f: Callbacks) -> str:
             ,"ptr", _PyCommunicator.call_ptr
             ,"ptr", _PyCommunicator.call_threadsafe_ptr
             ,"ptr", _PyCommunicator.get_global_ptr
-            ,"str", JSON.Stringify(_PyCommunicator.callbacks)
+            ,"ptr", _PyCommunicator.free_obj_ptr
+            ,"ptr", _PyCommunicator.globals_ptr
             ,"int")
 
 

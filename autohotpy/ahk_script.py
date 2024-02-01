@@ -1,22 +1,18 @@
-from functools import wraps
-from typing import Callable, LiteralString, Protocol, overload
-import typing
-from autohotpy.ahk_instance import AhkInstance
-from autohotpy.ahk_object import AhkObject
+from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Callable, cast, overload, TypeVar, TYPE_CHECKING
+
+from autohotpy.ahk_object import AhkObject
+from autohotpy.communicator.hotkey_factory import HotkeyFactory
+
+if TYPE_CHECKING:
+    from autohotpy.ahk_instance import AhkInstance
 
 Start = TypeVar("Start")
 Stop = TypeVar("Stop")
 Step = TypeVar("Step")
 
 Func = TypeVar("Func", bound=Callable, covariant=True)
-
-
-# class Slice(Protocol[Start, Stop, Step]):
-#     start: Start
-#     stop: Stop
-#     step: Step
 
 
 class AhkScript(AhkObject):
@@ -38,16 +34,16 @@ class AhkScript(AhkObject):
     # def __getitem__(self, item: Slice[str, None, Func]) -> Func:
     #     ...
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str | slice):
         if isinstance(item, str):
             self._ahk_instance.add_script(item)
             return None
 
         def decorator(func: Func) -> Func:
-            self._ahk_instance.add_hotkey_or_hotstring(item.start, func)
+            self._ahk_instance.add_hotkey(HotkeyFactory(item.start, item.step))
             return func
 
-        decorator_ = typing.cast(Callable[[Callable], Callable], decorator)
+        decorator_ = cast(Callable[[Callable], Callable], decorator)
 
         if isinstance(item, slice):
             if not isinstance(item.start, str):

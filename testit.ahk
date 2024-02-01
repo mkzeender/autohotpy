@@ -4,6 +4,7 @@ thing := '12345🏳️‍⚧️'
 
 my_float := 1.2
 my_empty := ''
+my_py_thing := ''
 
 class Hoopla {
     static my_static() {
