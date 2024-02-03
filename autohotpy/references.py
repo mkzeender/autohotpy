@@ -80,6 +80,8 @@ class ReferenceKeeper:
         return id(obj)
 
     def obj_from_ptr(self, ptr: int) -> Any:
+        if ptr in self.immortals:
+            return self.immortals.get(ptr)
         return self.references.get(ptr)
 
     def obj_free(self, ptr: int):

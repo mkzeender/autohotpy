@@ -15,10 +15,11 @@ class Hoopla {
     }
 }
 
-caller(fn) {
-    MsgBox "about to call function"
-    fn('hello world!')
+caller(ind) {
+    MsgBox "about to index " Type(my_py_thing) " with " ind
+    v := my_py_thing[ind]
     MsgBox "done calling it"
+    return v
 }
 
 my_hoop := Hoopla()
@@ -30,8 +31,6 @@ my_hoop := Hoopla()
 exit_func(r, c) {
     MsgBox 'Exiting'
 }
-
-+l::ExitApp
 
 
 OnExit(exit_func, -1)

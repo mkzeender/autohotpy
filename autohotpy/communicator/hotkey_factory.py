@@ -32,7 +32,7 @@ class HotkeyFactory:
             return f"""{seq}::
                 {{
                     static obj := ObjFromPtrAddRef({ptr})
-                    obj()
+                    obj(ThisHotkey)
                 }}"""
 
         elif isinstance(action, str):
@@ -43,6 +43,7 @@ class HotkeyFactory:
             return f"""{seq}::
             {{
                 static obj := _py_object_from_id({ptr})
+                obj(ThisHotkey)
             }}
             """
         else:

@@ -17,7 +17,7 @@ communicator = """
             result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
         }
         catch Any as err {
-            if not (err is Error) {
+            if not (err is Error or err is PyObject) {
                 err := Error(err)
             }
             result_data := map("success", false, "value", _PyCommunicator.value_to_data(err))
@@ -63,7 +63,7 @@ communicator = """
                     return Integer(val["value"])
                 }
                 if val["dtype"] == _PyParamTypes.PY_OBJECT {
-                    return PyObject(val["ptr"])
+                    return _py_object_from_id(val["ptr"])
                 }
                 Msgbox 'error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT
             }

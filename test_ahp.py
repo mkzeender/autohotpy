@@ -5,17 +5,16 @@ from autohotpy import ahk_runstr
 
 def main():
     ahk = ahk_runstr("#include testit.ahk")
+    ahk["^q" :: ahk.ExitApp]
+    ahk["^h"::print]
 
     print("starting...")
 
-    ahk.my_py_thing = ["hoo", "wut"]
+    ahk.my_py_thing = {"world": "cool"}
 
-    ahk.caller(print)
+    # print(f"caller returned {ahk.caller('world')}")
 
     print(ahk.my_py_thing)
-
-    ahk["^q" :: ahk.ExitApp]
-    ahk["^h" :: lambda: print("hello world")]
 
     print("idling...")
     ahk.run_forever()

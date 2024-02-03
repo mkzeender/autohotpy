@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
+from autohotpy.exceptions import AhkError
+
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
@@ -58,11 +60,23 @@ class AhkObject:
                 "base",
             )
 
+    def __str__(self) -> str:
+        try:
+            return self._ahk_instance.call_method(self, "ToString", ())
+        except (AhkError, AttributeError, ValueError):
+            return repr(self)
+
     def __iter__(self) -> Iterator:
         return self._ahk_instance.call_method(self, "__Enum", (1,), {})
 
     def __next__(self):
         return self._ahk_instance.call_method(self, "Call", (), {})  # TODO
+
+    def __repr__(self):
+        if self._ahk_ptr is None:
+            return super().__repr__()
+        typ = self._ahk_instance.call_method(None, "Type", (self,))
+        return f"<Ahk {typ} object at {hex(self._ahk_ptr)}>"
 
 
 class AhkBoundProp(AhkObject):

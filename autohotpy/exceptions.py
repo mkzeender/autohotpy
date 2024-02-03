@@ -1,5 +1,9 @@
+from __future__ import annotations
 from functools import cached_property
-from autohotpy.ahk_object import AhkObject
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from autohotpy.ahk_object import AhkObject
 
 
 class BaseAhkException(Exception):
@@ -11,19 +15,26 @@ class AhkError(BaseAhkException):
         super().__init__()
         self.error = err
 
-    @cached_property
-    def args(self):
+    @property
+    def args(self) -> tuple:
         return self.error.Message, self.error.What, self.error.Extra
+
+    @args.setter
+    def args(self, val):
+        try:
+            self.error.Message = val[0]
+            self.error.What = val[1]
+            self.error.Extra = val[2]
+        except IndexError:
+            pass
 
     @cached_property
     def msg(self):
         err_type = self.error._ahk_instance.call_method(None, "Type", (self.error,))
-        f"{err_type}: {self.args[0]}, {self.args[2]}"
+        return f"{err_type}: {self.args[0]}, {self.args[2]}"
 
     def __str__(self):
-        return (
-            f'{self.error._ahk_instance.call_method(None, "Type", (self.error,), {})}'
-        )
+        return self.msg
 
 
 class ExitApp(BaseAhkException):

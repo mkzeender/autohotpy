@@ -1,14 +1,12 @@
 py_object = """
     _py_object_from_id(id) {
         obj := {_py_id: id}
-        obj.base := PyObject
+        obj.base := PyObject.Prototype
         return obj
     }
         
     class PyObject {
-        __New(id) {
-            this.DefineProp("_py_id", {Value: id}) ; set value1
-        }
+        
         static __New() {
             ; called when a subclass is created. 
             if (this != PyObject) {
@@ -23,17 +21,27 @@ py_object = """
         }
         
         __Get(attr, params) {
-
+            if params {
+                throw PropertyError()
+            }
+            return _Python.getattr(this, attr)
         }
         __Set(attr, params, val) {
-            
+            return _Python.setattr(this, attr)
         }
         __Item[params*] {
             get {
-                return this.__get_item__(params)
+                Msgbox "in item"
+                if (params.Length == 1) {
+                    params := params[1]
+                }
+                return this.__getitem__(params)
             }
             set {
-                this.__set_item__(value)
+                if (params.Length == 1) {
+                    params := params[1]
+                }
+                this.__setitem__(params, value)
             }
         }
         __Enum(n_vars) {

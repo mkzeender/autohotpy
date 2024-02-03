@@ -34,7 +34,7 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
     )
 
     consts_enum = "\t\t\t\t\n".join(
-        f"static {k.upper()} := _py_object_from_id({v})" for k, v in asdict(a).items()
+        f"static {k} := _py_object_from_id({v})" for k, v in asdict(a).items()
     )
 
     return f"""
@@ -50,7 +50,10 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
             return DllCall({f.exit_app}, 'str', reason, 'int', code, 'cdecl int')
         }}
         _py_error_func(err, mode) {{
-            
+            if err is PyObject {{
+                Msgbox err.__str__()
+                return 1
+            }}
         }}
 
         OnExit(_py_exit_func, -1)
