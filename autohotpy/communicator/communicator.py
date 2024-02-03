@@ -4,9 +4,10 @@ import json
 from typing import TYPE_CHECKING, Any, Callable
 from autohotpy.ahk_obj_factory import AhkObjFactory
 from autohotpy.ahk_object import AhkObject
+from autohotpy.communicator.script_inject.Callbacks import Callbacks
 from autohotpy.exceptions import ExitApp, throw
 from autohotpy.references import ReferenceKeeper
-from autohotpy.communicator.script_injection import Callbacks, addr_of
+from autohotpy.communicator.script_inject.Callbacks import addr_of
 from autohotpy.communicator.dtypes import DTypes
 
 
