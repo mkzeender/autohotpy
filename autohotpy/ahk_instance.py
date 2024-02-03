@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import Any, Callable
+import traceback
+from typing import Any
 
 from enum import StrEnum, auto
 import os
 import threading
 from ctypes import c_int, c_uint, c_wchar_p
-from autohotpy.ahk_obj_factory import AhkObjFactory
+from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
 
-from autohotpy.ahk_object import AhkBoundProp, AhkObject
-from autohotpy.ahk_script import AhkScript
+from autohotpy.proxies.ahk_object import AhkObject
+from autohotpy.proxies.ahk_script import AhkScript
 from autohotpy.communicator import Communicator
 from autohotpy.communicator.hotkey_factory import HotkeyFactory
 from autohotpy.exceptions import ExitApp, throw
@@ -47,6 +48,7 @@ class AhkInstance:
         self.communicator = Communicator(
             on_idle=self._autoexec_thread_callback,
             on_exit=self._exit_app_callback,
+            on_error=self._error_callback,
             on_call=self._call_method_callback,
         )
 
@@ -180,6 +182,13 @@ class AhkInstance:
             self.state = AhkState.CLOSED
             self._autoexec_condition.notify_all()
             return 0
+
+    def _error_callback(self, e):
+        if isinstance(e, Exception):
+            print("Python exception ignored in Autohotkey thread:")
+            traceback.print_exception(e)
+            return 1
+        return 0
 
     def _call_method_callback(self, data: dict) -> tuple[bool, Any]:
         factory = AhkObjFactory()

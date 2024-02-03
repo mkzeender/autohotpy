@@ -34,8 +34,16 @@ communicator = """
     }
     
     _py_set_ahk_attr(obj, name, value) {
-            obj.%name% := value
-        }
+        obj.%name% := value
+    }
+
+    _py_getitem(obj, params*) {
+        return obj[params*]
+    }
+
+    _py_setitem(obj, value, params*) {
+        obj[params*] := value
+    }
 
     class _PyCommunicator {
 

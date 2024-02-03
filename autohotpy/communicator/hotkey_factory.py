@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, TypeAlias
 
 
 if TYPE_CHECKING:
-    from autohotpy.ahk_object import AhkObject
+    from autohotpy.proxies.ahk_object import AhkObject
     from autohotpy.ahk_instance import AhkInstance
 
     HotkeyAction: TypeAlias = Callable | str | AhkObject
@@ -22,7 +22,7 @@ class HotkeyFactory:
         self.inst.add_script(self.make_script())
 
     def make_script(self) -> str:
-        from autohotpy.ahk_object import AhkObject
+        from autohotpy.proxies.ahk_object import AhkObject
 
         action = self.action
         seq = self.sequence

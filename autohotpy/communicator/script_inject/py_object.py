@@ -21,25 +21,36 @@ py_object = """
         }
         
         __Get(attr, params) {
-            if params {
-                throw PropertyError()
+            val := (_Python.getattr)(this, attr)
+            if params.Length {
+                val := val[params*]
             }
-            return _Python.getattr(this, attr)
+            return val
         }
         __Set(attr, params, val) {
-            return _Python.setattr(this, attr)
+            if params.Length {
+                prop := (_Python.getattr)(this, attr)
+                prop[params*] := val
+            } else {
+                (_Python.setattr)(this, attr)
+            }
         }
         __Item[params*] {
             get {
-                Msgbox "in item"
                 if (params.Length == 1) {
-                    params := params[1]
+                    item := params[1]
                 }
-                return this.__getitem__(params)
+                else {
+                    item := Python.tuple(params)
+                }
+                return this.__getitem__(item)
             }
             set {
                 if (params.Length == 1) {
-                    params := params[1]
+                    item := params[1]
+                }
+                else {
+                    item := Python.tuple(params)
                 }
                 this.__setitem__(params, value)
             }
@@ -49,6 +60,10 @@ py_object = """
         }
         __Delete() {
             
+        }
+
+        ToString() {
+            return Python.str(this)
         }
     }
 """

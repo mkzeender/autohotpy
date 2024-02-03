@@ -2,11 +2,11 @@ from __future__ import annotations
 from ctypes import CFUNCTYPE, c_int, c_uint64, c_wchar_p
 import json
 from typing import TYPE_CHECKING, Any, Callable
-from autohotpy.ahk_obj_factory import AhkObjFactory
-from autohotpy.ahk_object import AhkObject
+from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
+from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.communicator.script_inject.Callbacks import Callbacks
 from autohotpy.exceptions import ExitApp, throw
-from autohotpy.references import ReferenceKeeper
+from autohotpy.communicator.references import ReferenceKeeper
 from autohotpy.communicator.script_inject.Callbacks import addr_of
 from autohotpy.communicator.dtypes import DTypes
 
@@ -15,9 +15,16 @@ UNSET = object()
 
 
 class Communicator:
-    def __init__(self, on_idle: Callable, on_exit: Callable, on_call: Callable):
+    def __init__(
+        self,
+        on_idle: Callable,
+        on_exit: Callable,
+        on_error: Callable,
+        on_call: Callable,
+    ):
         self.on_idle = on_idle
         self.on_exit = on_exit
+        self.on_error = on_error
         self.on_call = on_call
 
         self.py_references = ReferenceKeeper()

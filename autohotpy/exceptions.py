@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from autohotpy.ahk_object import AhkObject
+    from autohotpy.proxies.ahk_object import AhkObject
 
 
 class BaseAhkException(Exception):

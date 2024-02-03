@@ -17,9 +17,10 @@ class Hoopla {
 
 caller(ind) {
     MsgBox "about to index " Type(my_py_thing) " with " ind
-    v := my_py_thing[ind]
-    MsgBox "done calling it"
-    return v
+    
+    my_py_thing.foo['hit'] := 10
+    MsgBox "done calling it " String(my_py_thing.foo)
+    return
 }
 
 my_hoop := Hoopla()

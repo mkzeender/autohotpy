@@ -51,15 +51,12 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
         }}
         _py_error_func(err, mode) {{
             if err is PyObject {{
-                Msgbox err.__str__()
-                return 1
+                return (_Python.on_error)(err)
             }}
         }}
 
         OnExit(_py_exit_func, -1)
         OnError(_py_error_func, -1)
-
-        None := _py_object_from_id({id(None)})
 
         class _PyParamTypes {{
             {dtype_enum}
@@ -72,7 +69,8 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
         class _Python {{
             {consts_enum}
         }}
-
+        Python := _Python.pylib
+        
         
         DllCall({f.give_pointers}
             ,"ptr", _PyCommunicator.call_ptr

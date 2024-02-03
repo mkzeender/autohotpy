@@ -8,6 +8,19 @@ if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
 
 
+def _fmt_item(item):
+    if isinstance(item, tuple):
+        params = item
+    else:
+        params = (item,)
+
+    return params
+
+
+class _IterWrapper:
+    ...
+
+
 class AhkObject:
     __slots__ = "_ahk_instance", "_ahk_ptr", "_ahk_bound_to", "_ahk_method_name"
 
@@ -20,22 +33,10 @@ class AhkObject:
         self._ahk_ptr = pointer
 
     def call(self, *args, **kwargs) -> Any:
-        return self._ahk_instance.call_method(self, "Call", args, kwargs)
-
-    # def __getitem__(self, name) -> Any:  # TODO: fix these
-    #     if self._ahk_bound_to is None:
-    #         return getattr(self, "__Item")[name]
-    #     else:
-    #         return getattr(self._ahk_bound_to, "__Get")(name, [self])
-
-    # def __setitem__(self, name, value):
-    #     if self._ahk_bound_to is None:
-    #         return getattr(self, "__Set")(name, value)
-    #     else:
-    #         ...
+        return self._ahk_instance.call_method(self, "call", args, kwargs)
 
     def __call__(self, *args, **kwargs) -> Any:
-        return self._ahk_instance.call_method(self, "Call", args, kwargs)
+        return self._ahk_instance.call_method(self, "call", args, kwargs)
 
     def __getattr__(self, __name: str) -> Any:
         return self._ahk_instance.get_attr(self, __name)
@@ -66,17 +67,25 @@ class AhkObject:
         except (AhkError, AttributeError, ValueError):
             return repr(self)
 
-    def __iter__(self) -> Iterator:
-        return self._ahk_instance.call_method(self, "__Enum", (1,), {})
-
-    def __next__(self):
-        return self._ahk_instance.call_method(self, "Call", (), {})  # TODO
-
     def __repr__(self):
         if self._ahk_ptr is None:
             return super().__repr__()
         typ = self._ahk_instance.call_method(None, "Type", (self,))
         return f"<Ahk {typ} object at {hex(self._ahk_ptr)}>"
+
+    def __getitem__(self, item) -> Any:
+        return self._ahk_instance.call_method(
+            None, "_py_getitem", (self, *_fmt_item(item))
+        )
+
+    def __setitem__(self, item, value):
+        self._ahk_instance.call_method(None, "_py_setitem", (self, item, value))
+
+    def __iter__(self) -> Iterator:
+        return self._ahk_instance.call_method(self, "__Enum", (1,), {})
+
+    def __next__(self):
+        return self._ahk_instance.call_method(self, "Call", (), {})  # TODO
 
 
 class AhkBoundProp(AhkObject):

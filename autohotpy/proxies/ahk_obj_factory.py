@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from autohotpy.ahk_object import AhkBoundProp, AhkObject
+from autohotpy.proxies.ahk_object import AhkBoundProp, AhkObject
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance

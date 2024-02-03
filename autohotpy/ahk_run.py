@@ -5,7 +5,7 @@ from autohotpy.ahk_instance import AhkInstance
 import signal
 from ctypes import windll
 
-from autohotpy.ahk_script import AhkScript
+from autohotpy.proxies.ahk_script import AhkScript
 from autohotpy.global_state import thread_state, config, global_state
 
 

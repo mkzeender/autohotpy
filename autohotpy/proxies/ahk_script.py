@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, cast, overload, TypeVar, TYPE_CHECKING
 
-from autohotpy.ahk_object import AhkObject
+from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.communicator.hotkey_factory import HotkeyFactory
 
 if TYPE_CHECKING:

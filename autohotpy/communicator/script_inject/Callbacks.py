@@ -1,6 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
+from traceback import print_exception
+
+from autohotpy.convenience.py_lib import PyLib, pylib
 
 if TYPE_CHECKING:
     from autohotpy.communicator import Communicator
@@ -51,10 +54,15 @@ class Callbacks:
             exit_app=addr_of(self._exit_app),
         )
 
+        otim = comm.py_references.obj_to_immortal_ptr
+
         self.consts = PythonConsts(
-            getattr=comm.py_references.obj_to_immortal_ptr(getattr),
-            setattr=comm.py_references.obj_to_immortal_ptr(setattr),
-            none=comm.py_references.obj_to_immortal_ptr(setattr),
+            getattr=otim(getattr),
+            setattr=otim(setattr),
+            none=otim(setattr),
+            on_error=otim(comm.on_error),
+            pylib=otim(pylib),
+            print=otim(print),
         )
 
     def create_init_script(self):
@@ -78,3 +86,6 @@ class PythonConsts:
     getattr: int
     setattr: int
     none: int
+    on_error: int
+    pylib: int
+    print: int
