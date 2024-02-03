@@ -15,9 +15,10 @@ UNSET = object()
 
 
 class Communicator:
-    def __init__(self, on_idle: Callable, on_exit: Callable):
+    def __init__(self, on_idle: Callable, on_exit: Callable, on_call: Callable):
         self.on_idle = on_idle
         self.on_exit = on_exit
+        self.on_call = on_call
 
         self.py_references = ReferenceKeeper()
         self.callbacks = Callbacks(self)
@@ -28,9 +29,11 @@ class Communicator:
     def create_user_script(self, script: tuple[str, ...]):
         return self.callbacks.create_user_script(script)
 
-    def value_from_data(self, data, factory: AhkObjFactory) -> Any:
+    def value_from_data(self, data, factory: AhkObjFactory | None) -> Any:
         if isinstance(data, dict):
             if data["dtype"] == DTypes.AHK_OBJECT:
+                if factory is None:
+                    raise RuntimeError("Missing AhkObjFactory.")
                 return factory.create(int(data["ptr"]))
             if data["dtype"] == DTypes.INT:
                 return int(data["value"])
@@ -40,6 +43,8 @@ class Communicator:
             return data
 
     def value_to_data(self, value):
+        if isinstance(value, bool):
+            value = int(value)
         if isinstance(value, AhkObject):
             ptr = value._ahk_ptr
             ptr = ptr if ptr is not None else self.globals_ptr
@@ -107,6 +112,7 @@ class Communicator:
         call_threadsafe_ptr: int,
         get_global_var: int,
         free_obj_ptr: int,
+        put_return_ptr: int,
         globals_ptr: int,
     ):
         CALLERTYPE = CFUNCTYPE(c_int, c_wchar_p)
@@ -119,31 +125,26 @@ class Communicator:
             get_global_var
         )
         self._free_obj: Callable[[int], int] = CFUNCTYPE(c_int, c_uint64)(free_obj_ptr)
+        self.put_return_ptr: Callable[[int, int], int] = CFUNCTYPE(
+            c_int, c_uint64, c_uint64
+        )(put_return_ptr)
         self.globals_ptr = globals_ptr
 
         return 0
 
-    def _get_attr_callback(self, obj_id: c_int, attr: c_wchar_p, bytecount=-1):
-        # obj = self._references[obj_id.value]
-        # attr_val = attr.value
-        # assert attr_val is not None
-        # if not hasattr(obj, attr_val):
-        #     return -1
-        # gotten = getattr(obj, attr_val)
-        # if gotten is None:
-        #     return 0
-        # if isinstance(gotten, (str, int, float)):
-        #     gotten = str(gotten)
-        #     assert self._str_reference is None
-        #     self._str_reference = gotten
-        #     return len(gotten)
-        ...
+    def call_callback(self, call_data: str):
+        data = json.loads(call_data)
+        success, ret_val = self.on_call(data)
 
-    def set_attr_callback(self):
-        ...
+        ret_data = c_wchar_p(
+            json.dumps(dict(success=int(success), value=self.value_to_data(ret_val)))
+        )
 
-    def call_callback(self):
-        ...
+        ret_p = addr_of(ret_data)
+
+        self.put_return_ptr(int(data["ret_call_p"]), ret_p)
+
+        return 0
 
     def free_obj_callback(self):
-        ...
+        raise NotImplementedError

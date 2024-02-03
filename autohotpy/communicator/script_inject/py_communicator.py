@@ -44,6 +44,7 @@ communicator = """
             this.call_threadsafe_ptr := CallbackCreate(_py_call_ahk_function)
             this.get_global_ptr := CallbackCreate(_py_get_ahk_global, "F")
             this.free_obj_ptr := CallbackCreate(ObjRelease, "F")
+            this.put_return_ptr := CallbackCreate(_py_put_return_value, "F")
             this.globals_ptr := this.value_to_data(A_Globals)["ptr"]
             this.callbacks := Map(
                 "get_ahk_attr", this.value_to_data(ObjBindMethod(this, "get_ahk_attr")),

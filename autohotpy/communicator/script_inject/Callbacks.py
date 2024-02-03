@@ -35,16 +35,12 @@ def addr_of(func) -> int:
 
 class Callbacks:
     def __init__(self, comm: Communicator) -> None:
-        self._get = CFUNCTYPE(c_int, c_int64, c_wchar_p, c_char * 64)(
-            comm._get_attr_callback
-        )
-        self._set = comm.set_attr_callback
-        self._call = comm.call_callback
+        self._call = CFUNCTYPE(c_int, c_wchar_p)(comm.call_callback)
         self._free_obj = comm.free_obj_callback
         self._exit_app = CFUNCTYPE(c_int, c_wchar_p, c_int64)(comm.on_exit)
         self._idle = CFUNCTYPE(None)(comm.on_idle)
         self._give_pointers = CFUNCTYPE(
-            c_int, c_uint64, c_uint64, c_uint64, c_uint64, c_uint64
+            c_int, c_uint64, c_uint64, c_uint64, c_uint64, c_uint64, c_uint64
         )(comm._set_ahk_func_ptrs)
 
         self.ptrs = CallbackPtrs(
@@ -55,8 +51,14 @@ class Callbacks:
             exit_app=addr_of(self._exit_app),
         )
 
+        self.consts = PythonConsts(
+            getattr=comm.py_references.obj_to_immortal_ptr(getattr),
+            setattr=comm.py_references.obj_to_immortal_ptr(setattr),
+            none=comm.py_references.obj_to_immortal_ptr(setattr),
+        )
+
     def create_init_script(self):
-        return create_injection_script(self.ptrs)
+        return create_injection_script(self.ptrs, self.consts)
 
     def create_user_script(self, script):
         return create_user_script(script, self.ptrs)
@@ -69,3 +71,10 @@ class CallbackPtrs:
     idle: int
     give_pointers: int
     exit_app: int
+
+
+@dataclass
+class PythonConsts:
+    getattr: int
+    setattr: int
+    none: int

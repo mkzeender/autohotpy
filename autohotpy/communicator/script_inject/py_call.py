@@ -6,11 +6,10 @@ py_call = """
     class _py_caller_job {
 
         __New(obj, method, args) {
-            if (args.Length) and args[-1] is Kwargs {
-                kwargs := map()
-            }
-            else {
-                kwargs := map()
+            if (args.Length and (args[-1] is Kwargs)) {
+                kwds := map()
+            } else {
+                kwds := map()
             }
             
             this.ret_val := ""
@@ -23,17 +22,19 @@ py_call = """
                 arg_data[i] := vtd(v)
             }
             this.call_data := JSON.Stringify(map(
-                    "obj", vtd(obj)
+                "obj", vtd(obj)
                 ,"method", vtd(method)
                 ,"args", arg_data
                 ,"kwargs", kwargs
                 ,"ret_call_p", String(ObjPtr(this))
             ))
+
         }
 
         Call() {
             DllCall(_PyCallbacks.CALL_METHOD, "str", this.call_data, "int")
-            if this.success {
+
+            if Integer(this.success) {
                 return this.ret_val
             }
             else {
@@ -50,6 +51,6 @@ py_call = """
         job := ObjFromPtrAddRef(job_p)
         data := JSON.Parse(StrGet(data_p))
         job.ret_val := _PyCommunicator.value_from_data(data["value"])
-        job.success := _PyCommunicator.value_from_data(data["success"])
+        job.success := data["success"]
     }
 """

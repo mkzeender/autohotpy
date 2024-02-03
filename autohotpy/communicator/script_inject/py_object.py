@@ -16,10 +16,10 @@ py_object = """
             }
         }
         __Call(method_name, params) {
-            
+            return _py_call_method(this, method_name, params)
         }
         Call(params*) {
-            return this.__call__(params)
+            return _py_call_method(this, "", params)
         }
         
         __Get(attr, params) {

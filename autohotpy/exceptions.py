@@ -13,7 +13,12 @@ class AhkError(BaseAhkException):
 
     @cached_property
     def args(self):
-        ...
+        return self.error.Message, self.error.What, self.error.Extra
+
+    @cached_property
+    def msg(self):
+        err_type = self.error._ahk_instance.call_method(None, "Type", (self.error,))
+        f"{err_type}: {self.args[0]}, {self.args[2]}"
 
     def __str__(self):
         return (
@@ -32,7 +37,7 @@ class ExitApp(BaseAhkException):
 
 
 def throw(exc_value: Exception | AhkObject):
-    if isinstance(exc_value, Exception):
+    if isinstance(exc_value, BaseException):
         raise exc_value
     else:
         raise AhkError(exc_value)

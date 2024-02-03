@@ -45,7 +45,9 @@ class AhkInstance:
         os.chdir(cwd)
 
         self.communicator = Communicator(
-            on_idle=self._autoexec_thread_callback, on_exit=self._exit_app_callback
+            on_idle=self._autoexec_thread_callback,
+            on_exit=self._exit_app_callback,
+            on_call=self._call_method_callback,
         )
 
         # inject a backend library into the script, for communicating with python
@@ -178,3 +180,32 @@ class AhkInstance:
             self.state = AhkState.CLOSED
             self._autoexec_condition.notify_all()
             return 0
+
+    def _call_method_callback(self, data: dict) -> tuple[bool, Any]:
+        factory = AhkObjFactory()
+        factory.inst = self
+
+        vfd = self.communicator.value_from_data  # method alias
+
+        # always a python object or function
+        obj = vfd(data["obj"], factory=None)
+        # always a string, no factory needed.
+        method_name: str = vfd(data["method"], factory=None)
+
+        args = [vfd(arg, factory=factory) for arg in data["args"]]
+        kwargs = {}
+        # kwargs = {k: vfd(v, factory=factory) for k, v in data["kwargs"].items()}
+
+        if method_name:
+            func = getattr(obj, method_name)
+        else:
+            func = obj
+
+        try:
+            ret_val = func(*args, **kwargs)
+            success = True
+        except BaseException as e:
+            ret_val = e
+            success = False
+
+        return success, ret_val

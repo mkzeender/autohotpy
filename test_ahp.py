@@ -10,6 +10,8 @@ def main():
 
     ahk.my_py_thing = ["hoo", "wut"]
 
+    ahk.caller(print)
+
     print(ahk.my_py_thing)
 
     ahk["^q" :: ahk.ExitApp]

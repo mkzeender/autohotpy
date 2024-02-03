@@ -10,7 +10,7 @@ from .py_call import py_call
 from .py_communicator import communicator
 
 if TYPE_CHECKING:
-    from .Callbacks import CallbackPtrs
+    from .Callbacks import CallbackPtrs, PythonConsts
 
 
 def create_user_script(script: tuple[str, ...], f: CallbackPtrs) -> str:
@@ -22,7 +22,7 @@ def create_user_script(script: tuple[str, ...], f: CallbackPtrs) -> str:
     """
 
 
-def create_injection_script(f: CallbackPtrs) -> str:
+def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
     cwd = os.getcwd()
 
     dtype_enum = "\t\t\t\t\n".join(
@@ -31,6 +31,10 @@ def create_injection_script(f: CallbackPtrs) -> str:
 
     callbacks_enum = "\t\t\t\t\n".join(
         f"static {k.upper()} := {v}" for k, v in asdict(f).items()
+    )
+
+    consts_enum = "\t\t\t\t\n".join(
+        f"static {k.upper()} := _py_object_from_id({v})" for k, v in asdict(a).items()
     )
 
     return f"""
@@ -62,12 +66,17 @@ def create_injection_script(f: CallbackPtrs) -> str:
             {callbacks_enum}
         }}
 
+        class _Python {{
+            {consts_enum}
+        }}
+
         
         DllCall({f.give_pointers}
             ,"ptr", _PyCommunicator.call_ptr
             ,"ptr", _PyCommunicator.call_threadsafe_ptr
             ,"ptr", _PyCommunicator.get_global_ptr
             ,"ptr", _PyCommunicator.free_obj_ptr
+            ,"ptr", _PyCommunicator.put_return_ptr
             ,"ptr", _PyCommunicator.globals_ptr
             ,"int")
 
