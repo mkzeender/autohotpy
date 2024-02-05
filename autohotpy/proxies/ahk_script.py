@@ -1,63 +1,51 @@
 from __future__ import annotations
 
-from typing import Callable, cast, overload, TypeVar, TYPE_CHECKING
+from typing import Any, Callable, overload, TYPE_CHECKING
 
 from autohotpy.proxies.ahk_object import AhkObject
-from autohotpy.communicator.hotkey_factory import HotkeyFactory
+from autohotpy.proxies.var_ref import VarRef
+from autohotpy.proxies._sqr_brac_syntax import square_bracket_syntax
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
 
-Start = TypeVar("Start")
-Stop = TypeVar("Stop")
-Step = TypeVar("Step")
+# Start = TypeVar("Start")
+# Stop = TypeVar("Stop")
+# Step = TypeVar("Step")
 
-Func = TypeVar("Func", bound=Callable, covariant=True)
+# Func = TypeVar("Func", bound=Callable, covariant=True)
 
 
 class AhkScript(AhkObject):
     def __init__(self, inst: AhkInstance) -> None:
         super().__init__(inst, pointer=None)
 
-    def run_forever(self):
+    def run_forever(self) -> None:
         self._ahk_instance.run_forever()
 
     @overload
-    def __getitem__(self, item: str) -> None:
-        ...
+    def ref(self, initial_value: Any) -> VarRef: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Callable[[Func], Func] | Func:
-        ...
+    def ref(self, *initial_values: Any) -> tuple[VarRef, ...]: ...
 
-    # @overload
-    # def __getitem__(self, item: Slice[str, None, Func]) -> Func:
-    #     ...
+    def ref(self, *vals):  # type: ignore
+        """
+        Returns a VarRef. VarRefs must be used for any function that expects ByRef
+        parameters. You may provide multiple arguments to create multiple VarRefs at once.
 
-    def __getitem__(self, item: str | slice):
-        if isinstance(item, str):
-            self._ahk_instance.add_script(item)
-            return None
+        For example:
+        >>>x, y = ahk.ref(0, 0)
+        >>>MouseGetPos(x, y)
+        >>>print("the mouse is at", x.value, y.value)
 
-        def decorator(func: Func) -> Func:
-            self._ahk_instance.add_hotkey(HotkeyFactory(item.start, item.step))
-            return func
+        """
+        if len(vals) == 0:
+            return self._py_create_ref("")
+        elif len(vals) == 1:
+            return self._py_create_ref(vals[0])
+        else:
+            return tuple(self._py_create_ref(v) for v in vals)
 
-        decorator_ = cast(Callable[[Callable], Callable], decorator)
-
-        if isinstance(item, slice):
-            if not isinstance(item.start, str):
-                raise TypeError(
-                    f"Expected a string before the double-colon, got {type(item.start)}"
-                )
-
-            if isinstance(item.step, str):
-                return self.__getitem__(f"{item.start}::{item.step}")
-
-            if item.step is None:
-                return decorator_
-
-            elif callable(item.step):
-                return decorator_(item.step)
-
-        raise TypeError
+    def __getitem__(self, item: str | slice) -> Callable:
+        return square_bracket_syntax(self._ahk_instance, item)  # type: ignore

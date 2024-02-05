@@ -4,7 +4,8 @@ thing := '12345🏳️‍⚧️'
 
 my_float := 1.2
 my_empty := ''
-my_py_thing := ''
+my_py_thing := ""
+my_obj := {foo: map("bar", "hoo")}
 
 class Hoopla {
     static my_static() {
@@ -13,14 +14,29 @@ class Hoopla {
     my_non_static() {
 
     }
+
+    __New() {
+        this.in := [[1, 2, 3], [4, 5, 6]]
+    }
+
+    goop[a:=1, b:=1] {
+        set {
+            this.in[a][b] := value
+        }
+        get {
+            return this.in[a][b]
+        }
+    }
 }
 
 caller(ind) {
-    MsgBox "about to index " Type(my_py_thing) " with " ind
+    thingy := "wow"
+    t_p := &thingy
+    ; MsgBox "about to index " Type(my_py_thing) " with " ind
     
-    my_py_thing.foo['hit'] := 10
-    MsgBox "done calling it " String(my_py_thing.foo)
-    return
+    ; my_py_thing.foo['hit'] := 10
+    ; MsgBox "done calling it " String(my_py_thing.foo)
+    return t_p
 }
 
 my_hoop := Hoopla()

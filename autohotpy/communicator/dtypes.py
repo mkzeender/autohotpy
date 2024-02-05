@@ -10,6 +10,7 @@ class DTypes(StrEnum):
     INT = auto()
     FLOAT = auto()
     STR = auto()
+    VARREF = auto()
     AHK_OBJECT = auto()
     AHK_IMMORTAL = auto()
     PY_OBJECT = auto()

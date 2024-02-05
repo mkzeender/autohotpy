@@ -2,23 +2,11 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
 from autohotpy.exceptions import AhkError
+from autohotpy.proxies._seq_iter import _fmt_item
 
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
-
-
-def _fmt_item(item):
-    if isinstance(item, tuple):
-        params = item
-    else:
-        params = (item,)
-
-    return params
-
-
-class _IterWrapper:
-    ...
 
 
 class AhkObject:
@@ -79,7 +67,9 @@ class AhkObject:
         )
 
     def __setitem__(self, item, value):
-        self._ahk_instance.call_method(None, "_py_setitem", (self, item, value))
+        self._ahk_instance.call_method(
+            None, "_py_setitem", (self, value, *_fmt_item(item))
+        )
 
     def __iter__(self) -> Iterator:
         return self._ahk_instance.call_method(self, "__Enum", (1,), {})
@@ -99,4 +89,18 @@ class AhkBoundProp(AhkObject):
     def __call__(self, *args, **kwargs) -> Any:
         return self._ahk_instance.call_method(
             self._ahk_bound_to, self._ahk_method_name, args, kwargs
+        )
+
+    def __getitem__(self, item) -> Any:
+        return self._ahk_instance.call_method(
+            None,
+            "_py_getprop",
+            (self._ahk_bound_to, self._ahk_method_name, *_fmt_item(item)),
+        )
+
+    def __setitem__(self, item, value):
+        self._ahk_instance.call_method(
+            None,
+            "_py_setprop",
+            (self._ahk_bound_to, self._ahk_method_name, value, *_fmt_item(item)),
         )

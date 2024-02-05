@@ -45,6 +45,26 @@ communicator = """
         obj[params*] := value
     }
 
+    _py_getprop(obj, prop, params*) {
+        return obj.%prop%[params*]
+    }
+
+    _py_setprop(obj, prop, value, params*) {
+        obj.%prop%[params*] := value
+    }
+
+    _py_create_ref(value) {
+        return &value
+    }
+
+    _py_set_ref(&ref, value) {
+        ref := value
+    }
+
+    _py_deref(&ref) {
+        return ref
+    }
+
     class _PyCommunicator {
 
         static __New() {
@@ -63,7 +83,10 @@ communicator = """
         static value_from_data(val) {
             
             if val is Map {
-                if val["dtype"] == _PyParamTypes.AHK_OBJECT {
+                if (
+                    val["dtype"] == _PyParamTypes.AHK_OBJECT or
+                    val["dtype"] == _PyParamTypes.VARREF
+                ) {
                     val := ObjFromPtrAddRef(val["ptr"])
                     return val
                 }
@@ -82,6 +105,10 @@ communicator = """
             if val is PyObject {
                 ptr := val._py_id
                 return map("dtype", _PyParamTypes.PY_OBJECT, "ptr", String(ptr))
+            }
+            if val is VarRef {
+                ptr := ObjPtrAddRef(val)
+                return map("dtype", _PyParamTypes.VARREF, "ptr", String(ptr))
             }
             if IsObject(val) {
                 ptr := ObjPtrAddRef(val)

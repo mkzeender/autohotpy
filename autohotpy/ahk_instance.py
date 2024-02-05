@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 import traceback
 from typing import Any
 
@@ -184,8 +185,8 @@ class AhkInstance:
             return 0
 
     def _error_callback(self, e):
-        if isinstance(e, Exception):
-            print("Python exception ignored in Autohotkey thread:")
+        if isinstance(e, BaseException):
+            print("Python exception ignored in Autohotkey thread:", file=sys.stderr)
             traceback.print_exception(e)
             return 1
         return 0

@@ -9,6 +9,7 @@ from autohotpy.exceptions import ExitApp, throw
 from autohotpy.communicator.references import ReferenceKeeper
 from autohotpy.communicator.script_inject.Callbacks import addr_of
 from autohotpy.communicator.dtypes import DTypes
+from autohotpy.proxies.var_ref import VarRef
 
 
 UNSET = object()
@@ -39,24 +40,29 @@ class Communicator:
     def value_from_data(self, data, factory: AhkObjFactory | None) -> Any:
         if isinstance(data, dict):
             if data["dtype"] == DTypes.AHK_OBJECT:
-                if factory is None:
-                    raise RuntimeError("Missing AhkObjFactory.")
+                assert factory is not None
                 return factory.create(int(data["ptr"]))
             if data["dtype"] == DTypes.INT:
                 return int(data["value"])
             if data["dtype"] == DTypes.PY_OBJECT:
                 return self.py_references.obj_from_ptr(int(data["ptr"]))
+            if data["dtype"] == DTypes.VARREF:
+                assert factory is not None
+                return factory.create_varref(int(data["ptr"]))
         else:
             return data
 
     def value_to_data(self, value):
         if isinstance(value, bool):
             value = int(value)
+        if isinstance(value, VarRef):
+            ptr = value._ahk_ptr
+            return dict(dtype=DTypes.VARREF.value, ptr=ptr)
         if isinstance(value, AhkObject):
             ptr = value._ahk_ptr
             ptr = ptr if ptr is not None else self.globals_ptr
             return dict(dtype=DTypes.AHK_OBJECT.value, ptr=ptr)
-        if isinstance(value, (bool, int, float, str)):
+        if isinstance(value, (int, float, str)):
             return value
         else:
             ptr = self.py_references.obj_to_ptr_add_ref(value)

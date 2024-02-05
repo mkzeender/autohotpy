@@ -18,17 +18,14 @@ err.What := 's'
 err.File := A_ScriptDir '\autostart.py'
 err.Line := 10
 
-try
-    MsgBox(%'wooooo'%)
-catch UnsetError as e
-    MsgBox type(e)
+var_ref_gen(thing) {
+    return &thing
+}
 
-if ([1].Length) {
-    MsgBox 'yes'
-}
-else {
-    MsgBox 'no'
-}
+p1 := var_ref_gen("i1")
+p2 := var_ref_gen("i2")
+%p1% := "10"
+MsgBox %p1% " " %p2%
 
 ^h::
 {
