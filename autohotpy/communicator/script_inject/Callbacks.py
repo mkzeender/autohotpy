@@ -62,7 +62,9 @@ class Callbacks:
             none=otim(setattr),
             on_error=otim(comm.on_error),
             pylib=otim(pylib),
-            print=otim(print),
+            iter=otim(iter),
+            next=otim(next),
+            StopIteration=otim(StopIteration),
         )
 
     def create_init_script(self):
@@ -88,4 +90,6 @@ class PythonConsts:
     none: int
     on_error: int
     pylib: int
-    print: int
+    iter: int
+    next: int
+    StopIteration: int

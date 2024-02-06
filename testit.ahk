@@ -15,6 +15,12 @@ f2() {
     throw Error('damn dude!')
 }
 
+test_iter(itr) {
+    for k in itr {
+        MsgBox k
+    }
+}
+
 class Hoopla {
     static my_static() {
         MsgBox 'in my_static'

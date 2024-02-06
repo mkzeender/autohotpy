@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-import math
-import time
 from autohotpy import ahk_runstr
+from autohotpy.convenience.map_view import MapWrapper
 
 
 def shit(h):
@@ -19,23 +18,14 @@ def main():
     ahk["^h" :: ahk.caller]
     ahk["!s"::shit]
 
-    @ahk["^b"::]
-    def f1(hotkey):
-        ahk.f1(f2)
-
-    def f2():
-        ahk.f2()
-
-    f1("g")
-
-    x, y = ahk.ref("init", "init2")
-    z = ahk.ref("init")
-
-    ahk.MouseGetPos(x, y, z)
-
-    print(x.value, y.value, z.value)
-
     print("starting...")
+
+    arr = MapWrapper(ahk.Map(5, 4, 7, 4, 1, "ooo"))
+
+    for k, v in arr.items():
+        print(k, v)
+
+    # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))
 
     # ahk.my_hoop.goop[1, 2] = "fart"
@@ -49,7 +39,7 @@ def main():
 
     # print(ahk._Python.on_error(Exception("hi")))
 
-    print(f"caller returned {ahk.caller('weee')}")
+    # print(f"caller returned {ahk.caller('weee')}")
 
     print(ahk.my_py_thing)
 

@@ -55,8 +55,8 @@ py_object = """
                 this.__setitem__(params, value)
             }
         }
-        __Enum(n_vars) {
-            
+        __Enum(n_vars := "SHIT") {
+            return _PyEnumerator((_Python.iter)(this), n_vars)
         }
         __Delete() {
             
@@ -64,6 +64,31 @@ py_object = """
 
         ToString() {
             return Python.str(this)
+        }
+    }
+
+    class _PyEnumerator {
+        __New(iter, n_vars) {
+            this.iter := iter
+            this.n_vars := n_vars
+        }
+        Call(outputs*) {
+            try {
+                result := (_Python.next)(this.iter)
+            } catch Any as err {
+                if Python.isinstance(err, _Python.StopIteration) {
+                    return 0
+                }
+                throw
+            }
+            if this.n_vars == 1 {
+                %outputs[1]% := result
+            } else {
+                for val in result {
+                     %outputs[A_Index]% := val
+                }
+            }
+            return 1
         }
     }
 """

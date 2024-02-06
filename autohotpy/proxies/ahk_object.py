@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, Iterator
+from typing import Any, TYPE_CHECKING, Generator, Iterator
 
 from autohotpy.exceptions import AhkError
 from autohotpy.proxies._seq_iter import _fmt_item
@@ -7,6 +7,7 @@ from autohotpy.proxies._seq_iter import _fmt_item
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
+    from autohotpy.proxies.var_ref import VarRef
 
 
 class AhkObject:
@@ -71,11 +72,12 @@ class AhkObject:
             None, "_py_setitem", (self, value, *_fmt_item(item))
         )
 
-    def __iter__(self) -> Iterator:
-        return self._ahk_instance.call_method(self, "__Enum", (1,), {})
+    def __iter__(self) -> Generator:
+        enumer = self._ahk_instance.call_method(self, "__Enum", (1,), {})
 
-    def __next__(self):
-        return self._ahk_instance.call_method(self, "Call", (), {})  # TODO
+        ref: VarRef = self._ahk_instance.call_method(None, "_py_create_ref", ("",))
+        while enumer(ref):
+            yield ref.value
 
 
 class AhkBoundProp(AhkObject):
