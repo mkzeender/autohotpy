@@ -173,8 +173,12 @@ class AhkInstance:
             factory = AhkObjFactory(obj, name)
         return self.call_method(None, "_py_get_ahk_attr", (obj, name), None, factory)
 
-    def set_attr(self, obj: Any, name: str, value: Any):
+    def set_attr(self, obj: AhkObject, name: str, value: Any):
         return self.call_method(None, "_py_set_ahk_attr", (obj, name, value))
+
+    def free(self, obj: AhkObject):
+        if obj._ahk_ptr is not None:
+            self.communicator.free_ahk_obj(obj._ahk_ptr)
 
     def _exit_app_callback(self, reason, code):
         with self._autoexec_condition:

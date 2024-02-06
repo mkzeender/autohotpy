@@ -1,7 +1,7 @@
 from __future__ import annotations
 from ctypes import CFUNCTYPE, c_int, c_uint64, c_wchar_p
 import json
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
 from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.communicator.script_inject.Callbacks import Callbacks
@@ -137,7 +137,9 @@ class Communicator:
         self._get_global_var = CFUNCTYPE(c_int, c_wchar_p, CFUNCTYPE(c_int, c_wchar_p))(
             get_global_var
         )
-        self._free_obj: Callable[[int], int] = CFUNCTYPE(c_int, c_uint64)(free_obj_ptr)
+        self.free_ahk_obj: Callable[[int], int] = CFUNCTYPE(c_int, c_uint64)(
+            free_obj_ptr
+        )
         self.put_return_ptr: Callable[[int, int], int] = CFUNCTYPE(
             c_int, c_uint64, c_uint64
         )(put_return_ptr)

@@ -21,6 +21,9 @@ class AhkObject:
         self._ahk_instance = inst
         self._ahk_ptr = pointer
 
+    def __del__(self):
+        self._ahk_instance.free(self)
+
     def call(self, *args, **kwargs) -> Any:
         return self._ahk_instance.call_method(self, "call", args, kwargs)
 

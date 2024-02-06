@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from autohotpy import ahk_runstr
 from autohotpy.convenience.map_view import MapView
+from autohotpy.proxies.ahk_object import AhkObject
 
 
 ahk = ahk_runstr("#include testit.ahk")
@@ -25,12 +26,10 @@ def main():
     ahk["!s"::crap]
 
     print("starting...")
-
-    my_it = ()
+    thing: AhkObject = ahk.my_obj
     for i in range(153):
-        ahk.test_iter(my_it)
-
-    print(get_count(my_it))
+        thing = ahk.my_obj
+    print(ahk.ObjAddRef(thing._ahk_ptr))
 
     # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))
