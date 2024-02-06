@@ -59,7 +59,8 @@ py_object = """
             return _PyEnumerator((_Python.iter)(this), n_vars)
         }
         __Delete() {
-            
+            ; MsgBox(this._py_id " : " this.__class__.__name__)
+            DllCall(_PyCallbacks.FREE_OBJ, "int64", Integer(this._py_id), "int")
         }
 
         ToString() {

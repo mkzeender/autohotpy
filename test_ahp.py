@@ -3,6 +3,13 @@ from autohotpy import ahk_runstr
 from autohotpy.convenience.map_view import MapView
 
 
+ahk = ahk_runstr("#include testit.ahk")
+
+
+def get_count(obj):
+    return ahk._ahk_instance.communicator.py_references.get_refcount(obj)
+
+
 def crap(h):
     raise ValueError(h)
 
@@ -13,17 +20,17 @@ class Wut:
 
 
 def main():
-    ahk = ahk_runstr("#include testit.ahk")
     ahk["^q" :: ahk.ExitApp]
     ahk["^h" :: ahk.caller]
     ahk["!s"::crap]
 
     print("starting...")
 
-    arr = MapView(ahk.Map(5, 4, 7, 4, 1, "ooo"))
+    my_it = ()
+    for i in range(153):
+        ahk.test_iter(my_it)
 
-    for k, v in arr.items():
-        print(k, v)
+    print(get_count(my_it))
 
     # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))

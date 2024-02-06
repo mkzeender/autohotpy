@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 
 @dataclass(slots=True)
@@ -38,17 +38,25 @@ class References:
         if id(obj) in self._dict:
             del self._dict[id(obj)]
 
-    def decrement(self, obj):
-        ref = self._dict[id(obj)]
+    def decrement_obj(self, obj):
+        self.decrement_ptr(id(obj))
+
+    def decrement_ptr(self, ptr: int):
+        ref = self._dict[ptr]
         ref.count -= 1
         if ref.count <= 0:
-            del self._dict[id(obj)]
+            del self._dict[ptr]
 
     def get(self, ptr: int):
         return self._dict[ptr].value
 
     def __contains__(self, ptr: int):
         return ptr in self._dict
+
+    def count(self, ptr: int) -> int:
+        if ptr in self._dict:
+            return self._dict[ptr].count
+        return 0
 
 
 class Immortals(References):
@@ -86,4 +94,16 @@ class ReferenceKeeper:
 
     def obj_free(self, ptr: int):
         if ptr not in self.immortals:
-            self.references.decrement(ptr)
+            self.references.decrement_ptr(ptr)
+
+    def get_refcount(self, obj_or_ptr: int | Any) -> int | Literal["immortal"]:
+        if isinstance(obj_or_ptr, int):
+            ptr: int = obj_or_ptr
+        else:
+            ptr = id(obj_or_ptr)
+
+        if ptr in self.immortals:
+            return "immortal"
+        elif ptr in self.references:
+            return self.references.count(ptr)
+        return 0

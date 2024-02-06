@@ -159,5 +159,6 @@ class Communicator:
 
         return 0
 
-    def free_obj_callback(self):
-        raise NotImplementedError
+    def free_obj_callback(self, ptr: int):
+        self.py_references.obj_free(ptr)
+        return 0

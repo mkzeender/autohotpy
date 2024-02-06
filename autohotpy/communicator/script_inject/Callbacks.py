@@ -39,7 +39,7 @@ def addr_of(func) -> int:
 class Callbacks:
     def __init__(self, comm: Communicator) -> None:
         self._call = CFUNCTYPE(c_int, c_wchar_p)(comm.call_callback)
-        self._free_obj = comm.free_obj_callback
+        self._free_obj = CFUNCTYPE(c_int, c_int64)(comm.free_obj_callback)
         self._exit_app = CFUNCTYPE(c_int, c_wchar_p, c_int64)(comm.on_exit)
         self._idle = CFUNCTYPE(None)(comm.on_idle)
         self._give_pointers = CFUNCTYPE(
