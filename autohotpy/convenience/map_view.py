@@ -3,9 +3,22 @@ from typing import Any, MutableMapping
 from autohotpy.proxies.ahk_object import AhkObject
 
 
-class MapWrapper(MutableMapping):
-    def __init__(self, map: AhkObject):
+class MapView(MutableMapping):
+    """
+    A convenient wrapper for an ahk Map object, which provides all the methods
+    and properties of the python dictionary. It can also be used to convert
+    between a python dict and ahk Map.
+
+    >>> new_dict = MapView(ahk.my_map).to_dict()
+
+    >>> view = MapView(ahk.Map())
+    >>> view.update(my_dict)
+    >>> my_map = view.map
+    """
+
+    def __init__(self, map: AhkObject, **kwargs):
         self.map = map
+        self.update(kwargs)
 
     def __getitem__(self, item):
         return self.map[item]
@@ -33,3 +46,6 @@ class MapWrapper(MutableMapping):
 
     def copy(self):
         return self.map.clone()
+
+    def to_dict(self):
+        return {**self}

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from autohotpy import ahk_runstr
-from autohotpy.convenience.map_view import MapWrapper
+from autohotpy.convenience.map_view import MapView
 
 
 def shit(h):
@@ -20,7 +20,7 @@ def main():
 
     print("starting...")
 
-    arr = MapWrapper(ahk.Map(5, 4, 7, 4, 1, "ooo"))
+    arr = MapView(ahk.Map(5, 4, 7, 4, 1, "ooo"))
 
     for k, v in arr.items():
         print(k, v)
