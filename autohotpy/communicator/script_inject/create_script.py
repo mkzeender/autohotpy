@@ -1,16 +1,19 @@
 from __future__ import annotations
 from dataclasses import asdict
 import os
+from os import path
 from typing import TYPE_CHECKING
 
 from ..dtypes import DTypes
-from .py_object import py_object
-from .a_globals import a_globals
-from .py_call import py_call
-from .py_communicator import communicator
 
 if TYPE_CHECKING:
     from .Callbacks import CallbackPtrs, PythonConsts
+
+
+def include(name):
+    fp = path.join(path.split(__file__)[0], name) + ".ahk"
+    with open(fp, "r") as f:
+        return f.read()
 
 
 def create_user_script(script: tuple[str, ...], f: CallbackPtrs) -> str:
@@ -41,10 +44,10 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
         #include "{cwd}"
         SetWorkingDir "{cwd}"
 
-        {py_object}
-        {py_call}
-        {a_globals}
-        {communicator}
+        {include("py_object")}
+        {include("py_call")}
+        {include("a_globals")}
+        {include("py_communicator")}
         
         _py_exit_func(reason, code) {{
             return DllCall({f.exit_app}, 'str', reason, 'int', code, 'cdecl int')
