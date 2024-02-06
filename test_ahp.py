@@ -3,7 +3,7 @@ from autohotpy import ahk_runstr
 from autohotpy.convenience.map_view import MapView
 
 
-def shit(h):
+def crap(h):
     raise ValueError(h)
 
 
@@ -16,7 +16,7 @@ def main():
     ahk = ahk_runstr("#include testit.ahk")
     ahk["^q" :: ahk.ExitApp]
     ahk["^h" :: ahk.caller]
-    ahk["!s"::shit]
+    ahk["!s"::crap]
 
     print("starting...")
 
@@ -28,7 +28,6 @@ def main():
     # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))
 
-    # ahk.my_hoop.goop[1, 2] = "fart"
     # print(ahk.my_hoopla.goop[1, 2])
 
     # ahk.my_py_thing = Wut({"world": "cool"})

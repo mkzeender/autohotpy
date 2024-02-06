@@ -55,7 +55,7 @@ py_object = """
                 this.__setitem__(params, value)
             }
         }
-        __Enum(n_vars := "SHIT") {
+        __Enum(n_vars) {
             return _PyEnumerator((_Python.iter)(this), n_vars)
         }
         __Delete() {

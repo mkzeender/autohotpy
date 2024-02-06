@@ -2,7 +2,7 @@
 my_thing := Error('hooligan', 0, 10)
 
 class Hoo {
-    message := 'shit'
+    message := 'crap'
     What := 0
     Extra := ''
     File := A_ScriptDir '\autostart.py'
@@ -13,7 +13,7 @@ MsgBox A_ScriptDir '\autostart.py'
 
 err := Error()
 
-err.Message := 'shit'
+err.Message := 'crap'
 err.What := 's'
 err.File := A_ScriptDir '\autostart.py'
 err.Line := 10
