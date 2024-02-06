@@ -7,6 +7,14 @@ my_empty := ''
 my_py_thing := ""
 my_obj := {foo: map("bar", "hoo")}
 
+f1(thing) {
+    thing()
+}
+
+f2() {
+    throw Error('damn dude!')
+}
+
 class Hoopla {
     static my_static() {
         MsgBox 'in my_static'

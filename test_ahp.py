@@ -20,8 +20,13 @@ def main():
     ahk["!s"::shit]
 
     @ahk["^b"::]
-    def hi(t):
-        print("that works!")
+    def f1(hotkey):
+        ahk.f1(f2)
+
+    def f2():
+        ahk.f2()
+
+    f1("g")
 
     x, y = ahk.ref("init", "init2")
     z = ahk.ref("init")
