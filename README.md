@@ -11,7 +11,7 @@ ahk = ahk_runstr()
 ```
 
 ```python
-ahk = ahk_runstr('my_ahk_script.ahk')
+ahk = ahk_runstr('#include my_ahk_script.ahk')
 ```
 
 You are now free to access any built-in or user-defined functions, classes and global variables!
