@@ -14,7 +14,7 @@ Or importing an existing Autohotkey V2 script:
 ahk = include('my_ahk_script.ahk')
 ```
 
-You are now free to access any built-in or user-defined functions, classes and global variables!
+You are now free to access any built-in functions or user-defined, classes and global variables! Refer to the [Autohotkey built-in functions and classes](https://www.autohotkey.com/docs/v2/lib/index.htm).
 
 ```python
 ahk.MsgBox('hello world!')
