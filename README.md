@@ -2,16 +2,16 @@
 This is still in development, some features will not work as described.
 
 ## Getting Started (for python users)
-Start by creating an empty Autohotkey script, or importing an existing Autohotkey V2 script:
+Start by creating an empty Autohotkey script
 
 ```python
-from autohotpy import ahk_runstr
+from autohotpy import include
 
-ahk = ahk_runstr()
+ahk = include()
 ```
-
+Or importing an existing Autohotkey V2 script:
 ```python
-ahk = ahk_runstr('#include my_ahk_script.ahk')
+ahk = include('my_ahk_script.ahk')
 ```
 
 You are now free to access any built-in or user-defined functions, classes and global variables!
@@ -22,7 +22,7 @@ clipboard_contents = ahk.A_ClipBoard
 ahk.my_custom_function('blah blah', 42)
 ```
 
-## Hotkeys
+### Hotkeys
 You may use square bracket notation to define a hotkey. You can also treat it as a decorator.
 ```python
 ahk['^p'::my_function] # ctrl+p runs my_function
@@ -45,3 +45,29 @@ def cap():
     ahk.MsgBox('Language!')
 ```
 
+## Getting Started (for Ahk users)
+
+Make sure python and autohotpy are installed.
+
+Open a terminal and run your autohotkey script:
+
+```sh
+python -m autohotpy my_script.ahk
+```
+
+Autohotpy only supports v2.0-beta.1 so you may need to use
+
+```autohotkey
+#Requires AutoHotkey v2.0-beta.1
+```
+
+Use the "Python" variable to access [built-in python functions and classes](https://docs.python.org/3/library/functions.html) and [constants](https://docs.python.org/3/library/constants.html).
+
+```autohotkey
+Python.print("hello world!")
+```
+Import python modules:
+```autohotkey
+math := Python.import("math")
+MsgBox math.factorial(5)
+```

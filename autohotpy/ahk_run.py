@@ -9,7 +9,7 @@ from autohotpy.proxies.ahk_script import AhkScript
 from autohotpy.global_state import thread_state, config, global_state
 
 
-def ahk_runstr(*script: str) -> AhkScript:
+def run_str(*script: str) -> AhkScript:
     if thread_state.current_instance is None:
         # apply config
         with global_state.lock:
@@ -37,3 +37,10 @@ def ahk_runstr(*script: str) -> AhkScript:
     assert thread_state.current_instance is not None
 
     return AhkScript(thread_state.current_instance)
+
+
+def include(script: str | None = None) -> AhkScript:
+    if script is not None:
+        return run_str(f"#include {script}")
+    else:
+        return run_str()

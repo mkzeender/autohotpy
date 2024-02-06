@@ -1,6 +1,5 @@
-from .ahk_instance import AhkInstance
 from .global_state import config
-from .ahk_run import ahk_runstr
+from .ahk_run import run_str, include
 
 from .convenience.py_lib import pylib as Python
 import argparse
@@ -26,6 +25,6 @@ def main(*args: str):
 
     space = parser.parse_args()
     if space.run_str:
-        ahk_runstr(space.SCRIPT)
+        run_str(space.SCRIPT)
     else:
-        ahk_runstr(f"#include {space.SCRIPT}")
+        run_str(f"#include {space.SCRIPT}")

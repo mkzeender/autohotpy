@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from autohotpy import ahk_runstr
+from autohotpy import include
 from autohotpy.convenience.map_view import MapView
 from autohotpy.proxies.ahk_object import AhkObject
 
 
-ahk = ahk_runstr("#include testit.ahk")
+ahk = include("testit.ahk")
 
 
 def get_count(obj):
