@@ -1,18 +1,31 @@
 from dataclasses import dataclass
-from autohotpy import include
 from autohotpy.convenience.map_view import MapView
 from autohotpy.proxies.ahk_object import AhkObject
 
+from time import perf_counter
 
-ahk = include("testit.ahk")
+from autohotpy import ahk
+import os
+
+ahk.include(r"testit.ahk")
 
 
 def get_count(obj):
-    return ahk._ahk_instance.communicator.py_references.get_refcount(obj)
+    # return ahk._ahk_instance.communicator.py_references.get_refcount(obj)
+    ...
 
 
 def crap(h):
-    raise ValueError(h)
+    arr = ahk.Array[int](1, 2, 3)
+    print("starting...")
+
+    start = perf_counter()
+    for i in range(1000):
+
+        for val in arr:
+            ...
+    end = perf_counter()
+    print("done", end - start)
 
 
 @dataclass
@@ -25,11 +38,11 @@ def main():
     ahk["^h" :: ahk.caller]
     ahk["!s"::crap]
 
-    print("starting...")
-    thing: AhkObject = ahk.my_obj
-    for i in range(153):
-        thing = ahk.my_obj
-    print(ahk.ObjAddRef(thing._ahk_ptr))
+    thing: ahk.Object = ahk.my_obj
+
+    ref: ahk.VarRef = ahk.VarRef(thing)
+
+    print(ref.value)
 
     # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))
@@ -46,7 +59,7 @@ def main():
 
     # print(f"caller returned {ahk.caller('weee')}")
 
-    print(ahk.my_py_thing)
+    print(ahk)
 
     print("idling...")
     ahk.run_forever()

@@ -1,30 +1,35 @@
 # Autohotpy
 This is still in development, some features will not work as described.
 
-## Getting Started (for python users)
-Start by creating an empty Autohotkey script
+## Using AHK from a Python script
+Import the module, and use any autohotkey function, class, object, etc. Refer to the [Autohotkey built-in functions and classes](https://www.autohotkey.com/docs/v2/lib/index.htm).
 
 ```python
-from autohotpy import include
-
-ahk = include()
-```
-Or importing an existing Autohotkey V2 script:
-```python
-ahk = include('my_ahk_script.ahk')
-```
-
-You are now free to access any built-in functions or user-defined, classes and global variables! Refer to the [Autohotkey built-in functions and classes](https://www.autohotkey.com/docs/v2/lib/index.htm).
-
-```python
+from autohotpy import ahk
 ahk.MsgBox('hello world!')
 clipboard_contents = ahk.A_ClipBoard
-ahk.my_custom_function('blah blah', 42)
+
+array = ahk.Array('foo', 'bar')
+array.Push('baz')
+for elem in array:
+    print(elem) # foo, bar, baz
 ```
 
-### Hotkeys
-You may use square bracket notation to define a hotkey. You can also treat it as a decorator.
+
+You can include an Autohotkey v2 script using ```include()```, and access its functions, classes, and global variables.
 ```python
+ahk.include('my_ahk_script.ahk')
+ahk.custom_function(1, 2, 3)
+my_ahk_obj = ahk.MyClass()
+my_ahk_obj.method()
+```
+
+
+### Hotkeys
+You may use __square bracket notation__ to define a hotkey. You can also treat it as a decorator.
+```python
+ahk['!g'::'^t'] # remap alt+g to ctrl+t
+
 ahk['^p'::my_function] # ctrl+p runs my_function
 
 @ahk['^h'::] # ctrl+h runs this function
@@ -32,7 +37,7 @@ def example(this_hotkey):
     print(f'You pressed {this_hotkey}')
 ```
 
-For a list of hotkey codes, check out [Hotkeys and Keyboard Shortcuts](https://www.autohotkey.com/docs/v2/Hotkeys.htm) on the Autohotkey Docs
+Check out [Hotkeys and Keyboard Shortcuts](https://www.autohotkey.com/docs/v2/Hotkeys.htm) to learn about Hotkeys in Ahk.
 
 Square bracket notation can also be used to append arbitrary Ahk code to the script, and to define [Hotstrings](https://www.autohotkey.com/docs/v2/Hotstrings.htm)
 
@@ -45,7 +50,7 @@ def cap():
     ahk.MsgBox('Language!')
 ```
 
-## Getting Started (for Ahk users)
+## Using Python from an AHK script
 
 Make sure python and autohotpy are installed.
 
@@ -65,6 +70,12 @@ Use the "Python" variable to access [built-in python functions and classes](http
 
 ```autohotkey
 Python.print("hello world!")
+
+my_list := Python.list(["foo", "bar"])
+my_list.append("baz")
+for value in my_list {
+    MsgBox value
+}
 ```
 Import python modules:
 ```autohotkey

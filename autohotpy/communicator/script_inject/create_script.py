@@ -48,6 +48,7 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
         {include("py_call")}
         {include("a_globals")}
         {include("py_communicator")}
+        {include('Py_special')}
         
         _py_exit_func(reason, code) {{
             return DllCall({f.exit_app}, 'str', reason, 'int', code, 'cdecl int')

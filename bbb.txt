@@ -1,2 +1,6 @@
 TODO:
     add VarRef to docs
+
+    Enums:
+        DirSelect -> IntFlag
+        MouseButton -> Str

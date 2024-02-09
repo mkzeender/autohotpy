@@ -9,25 +9,17 @@ class Hoo {
     Line := 10
 }
 
-MsgBox A_ScriptDir '\autostart.py'
-
-err := Error()
-
-err.Message := 'crap'
-err.What := 's'
-err.File := A_ScriptDir '\autostart.py'
-err.Line := 10
-
-
-
-var_ref_gen(thing) {
-    return &thing
+fn(this, val) {
+    return &val
 }
 
-p1 := var_ref_gen("i1")
-p2 := var_ref_gen("i2")
-%p1% := "10"
-MsgBox %p1% " " %p2%
+VarRef.Call := fn
+
+my_ref := VarRef('thing')
+
+MsgBox %my_ref%
+
+
 
 ^h::
 {

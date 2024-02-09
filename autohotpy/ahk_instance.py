@@ -13,10 +13,11 @@ from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.proxies.ahk_script import AhkScript
 from autohotpy.communicator import Communicator
 from autohotpy.communicator.hotkey_factory import HotkeyFactory
-from autohotpy.exceptions import AhkError, ExitApp, throw
-from .communicator.ahkdll import ahkdll
+from autohotpy.exceptions import AhkError, ExitApp
+from .communicator import ahkdll
 
 from .global_state import thread_state
+from contextlib import chdir
 
 
 class AhkState(StrEnum):
@@ -37,14 +38,8 @@ class AhkInstance:
         self._exit_reason: str = ""
         self.state: AhkState = AhkState.INITIALIZING
 
-        # starting ahk will change the working directory (for some reason)
-        # so we save and restore it
-        cwd = os.getcwd()
-
-        self._thread_id = c_uint(ahkdll.NewThread("Persistent", "", "", c_int(1)))
+        self._thread_id = c_uint(ahkdll.new_thread("Persistent", "", "", c_int(1)))
         self._py_thread_id = threading.get_ident()
-
-        os.chdir(cwd)
 
         self.communicator = Communicator(
             on_idle=self._autoexec_thread_callback,
@@ -91,7 +86,7 @@ class AhkInstance:
                 cond.wait(timeout=1)
 
     def _add_script(self, script: str, runwait) -> None:
-        ahkdll.addScript(script, c_int(runwait), self._thread_id)
+        ahkdll.add_script(script, c_int(runwait), self._thread_id)
 
     def add_hotkey(self, factory: HotkeyFactory):
         factory.inst = self

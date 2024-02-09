@@ -78,7 +78,7 @@ class AhkObject:
     def __iter__(self) -> Generator:
         enumer = self._ahk_instance.call_method(self, "__Enum", (1,), {})
 
-        ref: VarRef = self._ahk_instance.call_method(None, "_py_create_ref", ("",))
+        ref: VarRef = self._ahk_instance.call_method(None, "VarRef", ("",))
         while enumer(ref):
             yield ref.value
 

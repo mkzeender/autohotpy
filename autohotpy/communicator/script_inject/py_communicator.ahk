@@ -52,18 +52,6 @@ _py_setprop(obj, prop, value, params*) {
     obj.%prop%[params*] := value
 }
 
-_py_create_ref(value) {
-    return &value
-}
-
-_py_set_ref(&ref, value) {
-    ref := value
-}
-
-_py_deref(&ref) {
-    return ref
-}
-
 class _PyCommunicator {
 
     static __New() {
