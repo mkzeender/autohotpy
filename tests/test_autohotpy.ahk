@@ -9,7 +9,6 @@ my_obj := {foo: map("bar", "hoo")}
 
 math := Python.import('math')
 
-MsgBox math.factorial(5)
 
 f1(thing) {
     thing()

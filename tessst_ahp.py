@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from autohotpy.convenience.map_view import MapView
-from autohotpy.proxies.ahk_object import AhkObject
 
 from time import perf_counter
 
