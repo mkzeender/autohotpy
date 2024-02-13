@@ -16,21 +16,7 @@ from autohotpy.static_typing.classes import (
     MouseButton,
 )
 
-class AhkBuiltinsMeta(type):
-    def __getattr__(self, name: str) -> Any: ...  # Enables arbitrary name lookup
-    def __setattr__(self, name: str, value: Any) -> None: ...
-
-class AhkBuiltins(metaclass=AhkBuiltinsMeta):
-    def __getattr__(self, name: str) -> Any: ...  # Enables arbitrary name lookup
-    def __setattr__(self, name: str, value: Any) -> None: ...
-    def __class_getitem__(
-        cls, item: str | slice
-    ) -> Callable: ...  # square bracket syntax!
-    @staticmethod
-    def include(*script_files: str) -> None:
-        """Run the provided file. The ".ahk" extension can be omitted."""
-    Array = array.Array
-    Object = object_.Object
+class AThruD:
     @staticmethod
     def abs(n: NumType, /) -> NumType:
         """
@@ -148,7 +134,9 @@ class AhkBuiltins(metaclass=AhkBuiltinsMeta):
     ComObjArray = com_obj.ComObjArray
 
     @staticmethod
-    def ComObjConnect(ComObj: ComValue, PrefixOrSink: str | Object = ..., /) -> Nothing:
+    def ComObjConnect(
+        ComObj: ComValue, PrefixOrSink: str | object_.Object = ..., /
+    ) -> Nothing:
         """Connects a COM object's event source to the script, enabling events to be handled."""
     ComObject = com_obj.ComObject
 
@@ -352,7 +340,7 @@ class AhkBuiltins(metaclass=AhkBuiltinsMeta):
         ExcludeTitle: str = ...,
         ExcludeText: str = ...,
         /,
-    ) -> Array:
+    ) -> array.Array:
         """Returns an array of items/rows from a ListBox, ComboBox, or DropDownList."""
 
     @staticmethod
@@ -643,3 +631,5 @@ class AhkBuiltins(metaclass=AhkBuiltinsMeta):
     def DriveLock(drive: str) -> Nothing: ...
     @staticmethod
     def DriveSetLabel(drive: str, new_label: str = ...) -> Nothing: ...
+    @staticmethod
+    def DriveUnlock(drive: str) -> Nothing: ...

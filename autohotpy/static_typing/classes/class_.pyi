@@ -1,3 +1,4 @@
+from typing import Any
 from autohotpy.static_typing.classes.object_ import Object
 
 class Class(Object):
@@ -6,3 +7,7 @@ class Class(Object):
 
 
     """
+
+    def __call__(self, *args: Any) -> Any:
+        """Constructs a new instance of the class."""
+    Prototype: Object

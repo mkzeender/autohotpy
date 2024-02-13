@@ -12,9 +12,6 @@ class Array(object_.Object, Generic[T]):
     Default: T
 
     def __init__(self, *values: T): ...
-    def Clone(self) -> Array[T]:
-        """Returns a shallow copy of an array."""
-
     def Delete(self, index: int, /) -> T:
         """Removes the value of an array element, leaving the index without a value."""
 
