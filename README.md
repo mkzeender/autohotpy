@@ -35,11 +35,13 @@ ahk['^p'::my_function] # ctrl+p runs my_function
 @ahk['^h'::] # ctrl+h runs this function
 def example(this_hotkey):
     print(f'You pressed {this_hotkey}')
+
+ahk.run_forever() # keep the script alive
 ```
 
 Check out [Hotkeys and Keyboard Shortcuts](https://www.autohotkey.com/docs/v2/Hotkeys.htm) to learn about Hotkeys in Ahk.
 
-Square bracket notation can also be used to append arbitrary Ahk code to the script, and to define [Hotstrings](https://www.autohotkey.com/docs/v2/Hotstrings.htm)
+Square bracket notation can also be used to run arbitrary Ahk code and to define [Hotstrings](https://www.autohotkey.com/docs/v2/Hotstrings.htm)
 
 ```python
 ahk['#ErrorStdOut']
@@ -48,6 +50,8 @@ ahk['::btw::by the way']
 @ahk['::shit'::]
 def cap():
     ahk.MsgBox('Language!')
+
+ahk.run_forever()
 ```
 
 ## Using Python from an AHK script
