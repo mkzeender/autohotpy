@@ -22,7 +22,7 @@ def main(*args: str):
         action="store_true",
     )
 
-    space = parser.parse_args()
+    space = parser.parse_args(args=args)
     if space.run_str:
         ahk[space.SCRIPT]
     else:

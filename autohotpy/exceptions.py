@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, override
 
 if TYPE_CHECKING:
     from autohotpy.proxies.ahk_object import AhkObject
@@ -16,11 +16,11 @@ class AhkError(BaseAhkException):
         self.error = err
 
     @property
-    def args(self) -> tuple:
+    def args(self) -> tuple[Any, Any, Any]:
         return self.error.Message, self.error.What, self.error.Extra
 
     @args.setter
-    def args(self, val):
+    def args(self, val:tuple[Any, Any, Any]):
         try:
             self.error.Message = val[0]
             self.error.What = val[1]
