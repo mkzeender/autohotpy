@@ -1,2 +1,1 @@
-#Persistent
-msgbox, A_Now
+msgbox A_Now

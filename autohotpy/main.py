@@ -9,8 +9,8 @@ def main(*args: str):
     module to access builtin python functions and classes, and use Python.import()
     to import python modules into autohotkey"""
     parser = argparse.ArgumentParser(
-        "autohotpy",
-        None,
+        prog="autohotpy",
+        usage=None,
         description=main.__doc__,
     )
 
