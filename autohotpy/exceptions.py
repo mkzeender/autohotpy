@@ -20,7 +20,7 @@ class AhkError(BaseAhkException):
         return self.error.Message, self.error.What, self.error.Extra
 
     @args.setter
-    def args(self, val:tuple[Any, Any, Any]):
+    def args(self, val:tuple[Any, Any, Any]): # type: ignore # TODO: investigate this?
         try:
             self.error.Message = val[0]
             self.error.What = val[1]
