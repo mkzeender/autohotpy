@@ -1,4 +1,4 @@
-from typing import Literal, TypeVar
+from typing import Literal, Self, TypeVar, overload
 
 NumType = TypeVar("NumType", bound=Number)
 
@@ -11,6 +11,10 @@ Bool = BoolInt | bool
 Number = bool | int | float
 
 Primitive = Number | str
+
+class VarRef[ValT]:
+    def __new__(cls, initial_value: ValT = ...) -> Self: ...
+    value: ValT
 
 MouseButton = Literal[
     "Left",

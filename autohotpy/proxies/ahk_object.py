@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, Generator, Iterator
+from typing import Any, TYPE_CHECKING, Iterator
 
 from autohotpy.exceptions import AhkError
 from autohotpy.proxies._cached_prop import cached_prop, ahkobject_slots
-from autohotpy.proxies._seq_iter import _fmt_item
+from autohotpy.proxies._seq_iter import fmt_item, iterator
 
 
 if TYPE_CHECKING:
@@ -91,24 +91,20 @@ class AhkObject:
             return super().__repr__()
         if self._ahk_type in ("Func", "Class"):
             return f"ahk.{self.__name__}"
-        return f"<Ahk {self._ahk_type} object at {hex(self._ahk_ptr)}>"
+        return f"<Ahk {self._ahk_type} object at {self._ahk_ptr:#x}>"
 
     def __getitem__(self, item) -> Any:
         return self._ahk_instance.call_method(
-            None, "_py_getitem", (self, *_fmt_item(item))
+            None, "_py_getitem", (self, *fmt_item(item))
         )
 
     def __setitem__(self, item, value):
         self._ahk_instance.call_method(
-            None, "_py_setitem", (self, value, *_fmt_item(item))
+            None, "_py_setitem", (self, value, *fmt_item(item))
         )
 
-    def __iter__(self) -> Generator:
-        enumer = self._ahk_instance.call_method(self, "__Enum", (1,), {})
-
-        ref: VarRef = self._ahk_instance.call_method(None, "VarRef", ("",))
-        while enumer(ref):
-            yield ref.value
+    def __iter__(self) -> Iterator:
+        return iterator(self, 1)  # type: ignore
 
 
 class AhkBoundProp(AhkObject):
@@ -128,12 +124,12 @@ class AhkBoundProp(AhkObject):
         return self._ahk_instance.call_method(
             None,
             "_py_getprop",
-            (self._ahk_bound_to, self._ahk_method_name, *_fmt_item(item)),
+            (self._ahk_bound_to, self._ahk_method_name, *fmt_item(item)),
         )
 
     def __setitem__(self, item, value):
         self._ahk_instance.call_method(
             None,
             "_py_setprop",
-            (self._ahk_bound_to, self._ahk_method_name, value, *_fmt_item(item)),
+            (self._ahk_bound_to, self._ahk_method_name, value, *fmt_item(item)),
         )

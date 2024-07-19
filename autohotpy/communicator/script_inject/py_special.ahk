@@ -17,7 +17,7 @@ class ObjBindProp {
     }
 }
 
-_py_create_ref(this, value) {
+_py_create_ref(this, value := "") {
     return &value
 }
 
