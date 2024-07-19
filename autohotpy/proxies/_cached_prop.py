@@ -1,11 +1,26 @@
-from typing import Any, Callable, Generic, Protocol, Self, TypeVar, overload, runtime_checkable
+from typing import (
+    Callable,
+    Generic,
+    Self,
+    TypeVar,
+    overload,
+)
 
 from sys import intern
-PropT = TypeVar('PropT', infer_variance=True)
-SelfT = TypeVar('SelfT', infer_variance=True)
+
+PropT = TypeVar("PropT", infer_variance=True)
+SelfT = TypeVar("SelfT", infer_variance=True)
 
 
-ahkobject_slots = "_ahk_instance", "_ahk_ptr", "_ahk_bound_to", "_ahk_method_name", '_ahk_cached_name', '_ahk_cached_ahk_type'
+ahkobject_slots = (
+    "_ahk_instance",
+    "_ahk_ptr",
+    "_ahk_bound_to",
+    "_ahk_method_name",
+    "_ahk_cached_name",
+    "_ahk_cached_ahk_type",
+)
+
 
 class CachedProp(Generic[SelfT, PropT]):
     def __init__(self, func: Callable[[SelfT], PropT]):
@@ -14,10 +29,9 @@ class CachedProp(Generic[SelfT, PropT]):
     def __set_name__(self, owner: type[SelfT], name: str) -> None:
         self.name = name
         self.qualname = owner.__qualname__ + "." + name
-        self.private_name = intern("_ahk_cached_" + name.strip('_'))
+        self.private_name = intern("_ahk_cached_" + name.strip("_"))
         assert self.private_name in ahkobject_slots
 
-        
     @overload
     def __get__(self, obj: None, objtype: type[SelfT]) -> Self: ...
     @overload
@@ -25,7 +39,7 @@ class CachedProp(Generic[SelfT, PropT]):
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
-        
+
         val = getattr(obj, self.private_name)
         if val is None:
             val = self.func(obj)
@@ -33,7 +47,7 @@ class CachedProp(Generic[SelfT, PropT]):
 
         return val
 
-    def __set__(self, obj:SelfT, value: PropT) -> None:
+    def __set__(self, obj: SelfT, value: PropT) -> None:
         raise AttributeError(self.name, obj)
 
     def __repr__(self):
@@ -43,5 +57,3 @@ class CachedProp(Generic[SelfT, PropT]):
 def cached_prop(method: Callable[[SelfT], PropT]) -> CachedProp[SelfT, PropT]:
 
     return CachedProp(method)
-
-

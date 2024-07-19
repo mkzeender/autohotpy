@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from autohotpy.proxies.var_ref import VarRef
 
 
-def _demangle(name:str) -> str:
-    if name.endswith('__'):
+def _demangle(name: str) -> str:
+    if name.endswith("__"):
         return name
-    lead, sep, end = name.rpartition('__')
-    return sep+end
-    
+    lead, sep, end = name.rpartition("__")
+    return sep + end
+
 
 class AhkObject:
     __slots__ = ahkobject_slots
@@ -49,7 +49,6 @@ class AhkObject:
             return
         self._ahk_instance.set_attr(self, _demangle(__name), __value)
 
-    
     def __dir__(self):
         yield from super().__dir__()
         obj = self
@@ -67,15 +66,15 @@ class AhkObject:
     @cached_prop
     def __name__(self) -> str:
         if self._ahk_ptr is None:
-            return 'ahk'
-        if self._ahk_type == 'Func':
+            return "ahk"
+        if self._ahk_type == "Func":
             return self.Name
-        if self._ahk_type == 'Class':
-            return getattr(self.Prototype, '__Class')
+        if self._ahk_type == "Class":
+            return getattr(self.Prototype, "__Class")
         try:
-            return str(self._ahk_instance.get_attr(self, '__name__'))
+            return str(self._ahk_instance.get_attr(self, "__name__"))
         except AhkError:
-            raise AttributeError(name='__name__', obj=self)
+            raise AttributeError(name="__name__", obj=self)
 
     @cached_prop
     def _ahk_type(self) -> str:
@@ -90,8 +89,8 @@ class AhkObject:
     def __repr__(self):
         if self._ahk_ptr is None:
             return super().__repr__()
-        if self._ahk_type in ('Func', 'Class'):
-            return f'ahk.{self.__name__}'
+        if self._ahk_type in ("Func", "Class"):
+            return f"ahk.{self.__name__}"
         return f"<Ahk {self._ahk_type} object at {hex(self._ahk_ptr)}>"
 
     def __getitem__(self, item) -> Any:
@@ -110,8 +109,6 @@ class AhkObject:
         ref: VarRef = self._ahk_instance.call_method(None, "VarRef", ("",))
         while enumer(ref):
             yield ref.value
-
-    
 
 
 class AhkBoundProp(AhkObject):
