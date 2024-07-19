@@ -1,5 +1,6 @@
 from typing import Any, Callable, Generic, Protocol, Self, TypeVar, overload, runtime_checkable
 
+from sys import intern
 PropT = TypeVar('PropT', infer_variance=True)
 SelfT = TypeVar('SelfT', infer_variance=True)
 
@@ -13,7 +14,7 @@ class CachedProp(Generic[SelfT, PropT]):
     def __set_name__(self, owner: type[SelfT], name: str) -> None:
         self.name = name
         self.qualname = owner.__qualname__ + "." + name
-        self.private_name = "_ahk_cached_" + name.strip('_')
+        self.private_name = intern("_ahk_cached_" + name.strip('_'))
         assert self.private_name in ahkobject_slots
 
         
