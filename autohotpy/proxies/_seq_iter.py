@@ -41,7 +41,10 @@ def iterator(iterable: Object, n: int) -> Iterable: ...
 
 
 def iterator(iterable, n=2):  # type: ignore
-    """Iterate over 2 or more parameters in an ahk iterable. Examples:
+    """Iterate over 2 or more parameters in an ahk iterable.
+    The parameter n should be used to specify the number of variables
+    to unpack in the for-loop (default is 2)
+    Examples:
 
     >>> arr = ahk.Array('foo', 'bar')
     >>> for index, value in iterator(arr):
@@ -55,6 +58,7 @@ def iterator(iterable, n=2):  # type: ignore
 
     foo bar
     hoo baz
+
 
     """
     enumer = iterable._ahk_instance.call_method(iterable, "__Enum", (n,), {})

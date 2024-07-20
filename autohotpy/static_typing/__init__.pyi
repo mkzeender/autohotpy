@@ -1,6 +1,8 @@
 from typing import Callable
 import typing
 
+from autohotpy.static_typing import classes
+
 from autohotpy.static_typing.classes import (
     array,
     buffer,
@@ -10,6 +12,7 @@ from autohotpy.static_typing.classes import (
     func,
     inputhook,
     object_,
+    map,
 )
 from autohotpy.static_typing.functions import a_thru_d
 
@@ -27,6 +30,9 @@ class AhkBuiltins(a_thru_d.AThruD, metaclass=AhkBuiltinsMeta):
     def include(*script_files: str) -> None:
         """Run the provided file. The ".ahk" extension can be omitted."""
     Any = typing.Any
+    Number = classes.Number
+    Primitive = classes.Primitive
+
     Object = object_.Object
     Array = array.Array
     Buffer = buffer.Buffer
@@ -57,3 +63,5 @@ class AhkBuiltins(a_thru_d.AThruD, metaclass=AhkBuiltinsMeta):
     Enumerator = func.Enumerator
     Gui: Any
     InputHook = inputhook.InputHook
+    Map = map.Map
+    VarRef = classes.VarRef

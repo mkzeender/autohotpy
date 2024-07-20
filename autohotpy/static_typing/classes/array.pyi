@@ -1,10 +1,8 @@
-from typing import Any, Generic, Iterator, TypeVar, overload
-from autohotpy.static_typing.classes import BoolInt, Nothing, object_
+from typing import Iterator, overload
+from autohotpy.static_typing.classes import Nothing, object_
+from autohotpy.static_typing.classes.protocols import DoubleIterable, SingleIterable
 
-T = TypeVar("T")
-DefaultT = TypeVar("DefaultT")
-
-class Array(object_.Object, Generic[T]):
+class Array[T](SingleIterable[T], DoubleIterable[int, T], object_.Object):
     """An Array object contains a list or sequence of values."""
 
     Length: int
@@ -15,7 +13,7 @@ class Array(object_.Object, Generic[T]):
     def Delete(self, index: int, /) -> T:
         """Removes the value of an array element, leaving the index without a value."""
 
-    def Get(self, index: int, default: DefaultT = ..., /) -> T | DefaultT:
+    def Get[DefaultT](self, index: int, default: DefaultT = ..., /) -> T | DefaultT:
         """Returns the value at a given index, or a default value."""
 
     def Has(self, index: int, /) -> int:

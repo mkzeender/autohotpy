@@ -1,4 +1,4 @@
-from typing import Literal, Self, TypeVar, overload
+from typing import Literal, Self, TypeVar
 
 NumType = TypeVar("NumType", bound=Number)
 
