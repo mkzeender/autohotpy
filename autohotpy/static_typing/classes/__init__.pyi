@@ -1,6 +1,4 @@
-from typing import Literal, Self, TypeVar
-
-NumType = TypeVar("NumType", bound=Number)
+from typing import Literal, Self
 
 Nothing = Literal[""]
 
