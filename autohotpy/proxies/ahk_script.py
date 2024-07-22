@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Callable, overload, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 from autohotpy.proxies.ahk_object import AhkObject
-from autohotpy.proxies.var_ref import VarRef
 from autohotpy.proxies._sqr_brac_syntax import square_bracket_syntax
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
 
-# Start = TypeVar("Start")
-# Stop = TypeVar("Stop")
-# Step = TypeVar("Step")
-
-# Func = TypeVar("Func", bound=Callable, covariant=True)
-
 
 class AhkScript(AhkObject):
     def __init__(self, inst: AhkInstance) -> None:
-        super().__init__(inst, pointer=None)
+        super().__init__(inst, pointer=None, type_name="Class", immortal=True)
 
     def include(self, *script_files: str) -> None:
         """Run the provided file. The ".ahk" extension can be omitted."""
@@ -29,3 +22,10 @@ class AhkScript(AhkObject):
 
     def __getitem__(self, item: str | slice) -> Callable:
         return square_bracket_syntax(self._ahk_instance, item)  # type: ignore
+
+    def __getattr__(self, __name: str) -> Any:
+        attr = super().__getattr__(__name)
+        if isinstance(attr, AhkObject) and attr._ahk_immortal:
+            # if the attr is immutable, cache the result
+            self.__dict__[__name] = attr
+        return attr

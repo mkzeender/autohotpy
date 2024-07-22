@@ -12,16 +12,6 @@ PropT = TypeVar("PropT", infer_variance=True)
 SelfT = TypeVar("SelfT", infer_variance=True)
 
 
-ahkobject_slots = (
-    "_ahk_instance",
-    "_ahk_ptr",
-    "_ahk_bound_to",
-    "_ahk_method_name",
-    "_ahk_cached_name",
-    "_ahk_cached_ahk_type",
-)
-
-
 class CachedProp(Generic[SelfT, PropT]):
     def __init__(self, func: Callable[[SelfT], PropT]):
         self.func = func
@@ -30,7 +20,7 @@ class CachedProp(Generic[SelfT, PropT]):
         self.name = name
         self.qualname = owner.__qualname__ + "." + name
         self.private_name = intern("_ahk_cached_" + name.strip("_"))
-        assert self.private_name in ahkobject_slots
+        assert not hasattr(owner, "__slots__") or self.private_name in owner.__slots__  # type: ignore
 
     @overload
     def __get__(self, obj: None, objtype: type[SelfT]) -> Self: ...

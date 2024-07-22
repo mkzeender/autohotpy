@@ -9,7 +9,7 @@ class RefWrapper:
     value: Any
     count: int = 0
 
-    def __eq__(self, other: RefWrapper | int) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, int):
             return id(self.value) == other
         elif isinstance(other, RefWrapper):

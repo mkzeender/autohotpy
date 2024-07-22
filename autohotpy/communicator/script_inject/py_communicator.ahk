@@ -98,8 +98,15 @@ class _PyCommunicator {
             return map("dtype", _PyParamTypes.VARREF, "ptr", String(ptr))
         }
         if IsObject(val) {
-            ptr := ObjPtrAddRef(val)
-            return map("dtype", _PyParamTypes.AHK_OBJECT, "ptr", String(ptr))
+            immortal := (val is Class) or (val is Func and val.IsBuiltIn)
+            if immortal {
+                ptr := ObjPtr(val)
+            } else {
+                ptr := ObjPtrAddRef(val)
+            }
+            ; Msgbox immortal ", " Type(val) ", " (val is Func and val.IsBuiltIn)
+            
+            return map("dtype", _PyParamTypes.AHK_OBJECT, "ptr", String(ptr), "type_name", Type(val), 'immortal', immortal)
         }
         if val is Integer {
             return map("dtype", _PyParamTypes.INT, "value", String(val))

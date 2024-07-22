@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
 from autohotpy.exceptions import AhkError
-from autohotpy.proxies._cached_prop import cached_prop, ahkobject_slots
+from autohotpy.proxies._cached_prop import cached_prop
 from autohotpy.proxies._seq_iter import fmt_item, iterator
 
 
@@ -19,20 +19,30 @@ def _demangle(name: str) -> str:
 
 
 class AhkObject:
-    __slots__ = ahkobject_slots
+    __slots__ = (
+        "_ahk_instance",
+        "_ahk_ptr",
+        "_ahk_cached_name",
+        "_ahk_type_name",
+        "_ahk_immortal",
+    )
 
     def __init__(
         self,
         inst: AhkInstance,
         pointer: int | None,
+        type_name: str,
+        immortal: bool = False,
     ) -> None:
         self._ahk_instance = inst
         self._ahk_ptr = pointer
         self._ahk_cached_name = None
-        self._ahk_cached_ahk_type = None
+        self._ahk_type_name = type_name
+        self._ahk_immortal = immortal
 
     def __del__(self):
-        self._ahk_instance.free(self)
+        if not self._ahk_immortal:
+            self._ahk_instance.free(self)
 
     def call(self, *args, **kwargs) -> Any:
         return self._ahk_instance.call_method(self, "call", args, kwargs)
@@ -67,18 +77,14 @@ class AhkObject:
     def __name__(self) -> str:
         if self._ahk_ptr is None:
             return "ahk"
-        if self._ahk_type == "Func":
+        if self._ahk_type_name == "Func":
             return self.Name
-        if self._ahk_type == "Class":
+        if self._ahk_type_name == "Class":
             return getattr(self.Prototype, "__Class")
         try:
             return str(self._ahk_instance.get_attr(self, "__name__"))
         except AhkError:
             raise AttributeError(name="__name__", obj=self)
-
-    @cached_prop
-    def _ahk_type(self) -> str:
-        return self._ahk_instance.call_method(None, "Type", (self,))
 
     def __str__(self) -> str:
         try:
@@ -89,9 +95,9 @@ class AhkObject:
     def __repr__(self):
         if self._ahk_ptr is None:
             return super().__repr__()
-        if self._ahk_type in ("Func", "Class"):
+        if self._ahk_type_name in ("Func", "Class"):
             return f"ahk.{self.__name__}"
-        return f"<Ahk {self._ahk_type} object at {self._ahk_ptr:#x}>"
+        return f"<Ahk {self._ahk_type_name} object at {self._ahk_ptr:#x}>"
 
     def __getitem__(self, item) -> Any:
         return self._ahk_instance.call_method(
@@ -108,10 +114,23 @@ class AhkObject:
 
 
 class AhkBoundProp(AhkObject):
+    __slots__ = (
+        "_ahk_bound_to",
+        "_ahk_method_name",
+    )
+
     def __init__(
-        self, inst: AhkInstance, pointer: int, bound_to: AhkObject, method_name: str
+        self,
+        inst: AhkInstance,
+        pointer: int,
+        type_name: str,
+        immortal: bool,
+        bound_to: AhkObject,
+        method_name: str,
     ) -> None:
-        super().__init__(inst, pointer)
+        super().__init__(
+            inst=inst, pointer=pointer, type_name=type_name, immortal=immortal
+        )
         self._ahk_bound_to = bound_to
         self._ahk_method_name = method_name
 
