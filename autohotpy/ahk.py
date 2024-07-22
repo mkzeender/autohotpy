@@ -1,5 +1,5 @@
 import sys
 
-from autohotpy import ahk_run
+from autohotpy import ahk as _ahk
 
-sys.modules[__name__] = ahk_run.run_str()  # type: ignore
+sys.modules[__name__] = _ahk  # type: ignore

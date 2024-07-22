@@ -1,3 +1,4 @@
+from autohotpy.ahk import Menu
 from autohotpy import ahk
 
 ahk.include(r"tests/test_autohotpy.ahk")

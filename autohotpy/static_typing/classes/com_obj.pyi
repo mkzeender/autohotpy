@@ -8,9 +8,9 @@ class ComValue[ValT]:
 
     """
 
-    def __new__(cls, var_type: int, value: ValT, flags: int = ...) -> Self: ...
-
-    Ptr: int
+    def __new__(
+        cls, var_type: int, value: ValT, flags: int = ...
+    ) -> ComValue | ComValueRef: ...
 
 class ComObjArray[ValT](ComValue[ValT]):
     """Creates a SafeArray for use with COM."""
@@ -32,3 +32,6 @@ class ComObject(ComValue):
 
     def __new__(cls, CLSID: str, IID: str = ...) -> Self | ComValue: ...
     def __getattr__(self, name: str) -> Any: ...
+
+class ComValueRef(ComValue):
+    Ptr: int
