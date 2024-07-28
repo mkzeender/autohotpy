@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
+from autohotpy import exceptions
 from autohotpy.proxies._cached_prop import cached_prop
+from autohotpy.proxies._copying import reduce_ahk_obj
 from autohotpy.proxies._seq_iter import fmt_item, iterator
 
 
@@ -21,7 +23,7 @@ class AhkObject:
     __slots__ = (
         "_ahk_instance",
         "_ahk_ptr",
-        "_ahk_cached_name",
+        "_ahk_cached_ahk_name",
         "_ahk_type_name",
         "_ahk_immortal",
     )
@@ -35,7 +37,7 @@ class AhkObject:
     ) -> None:
         self._ahk_instance = inst
         self._ahk_ptr = pointer
-        self._ahk_cached_name = None
+        self._ahk_cached_ahk_name = None
         self._ahk_type_name = type_name
         self._ahk_immortal = immortal
 
@@ -62,33 +64,50 @@ class AhkObject:
             self._ahk_instance.set_attr(self, _demangle(__name), __value)
 
     def __dir__(self):
-        yield from super().__dir__()
-        obj = self
-        while True:
-            try:
-                yield from obj.OwnProps()
-            except AttributeError:
-                return
+        def _dir():
+            obj = self
+            while True:
+                try:
+                    yield from obj.OwnProps()
+                    obj = self._ahk_instance.get_attr(
+                        obj,
+                        "base",
+                    )
+                except AttributeError:
+                    break
 
-            obj = self._ahk_instance.get_attr(
-                obj,
-                "base",
-            )
+            yield from super().__dir__()
+
+        return set(_dir())
+
+    def __reduce__(self) -> str | tuple[Any, ...]:
+        return reduce_ahk_obj(self)
 
     @cached_prop
-    def __name__(self) -> str:
+    def _ahk_name(self) -> str:
+
         if self._ahk_ptr is None:
             return "ahk"
         if self._ahk_type_name == "Func":
             return self.Name
         if self._ahk_type_name == "Class":
             return getattr(self.Prototype, "__Class")
-        return str(self._ahk_instance.get_attr(self, "__name__"))
+        if self._ahk_type_name == "Prototype":
+            return self.__Class + ".Prototype"
+
+        raise AttributeError(name="_ahk_name", obj=self)
+
+    @property
+    def __name__(self) -> str:
+        try:
+            return self._ahk_name.split(".")[-1]
+        except IndexError:
+            return ""
 
     def __str__(self) -> str:
         try:
             return self._ahk_instance.call_method(self, "ToString", ())
-        except (AttributeError, ValueError):
+        except (AttributeError, ValueError, exceptions.Error):
             return repr(self)
 
     def __repr__(self):

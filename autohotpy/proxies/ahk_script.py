@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, TYPE_CHECKING
 
+from autohotpy import exceptions
 from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.proxies._sqr_brac_syntax import square_bracket_syntax
 
@@ -24,7 +25,14 @@ class AhkScript(AhkObject):
         return square_bracket_syntax(self._ahk_instance, item)  # type: ignore
 
     def __getattr__(self, __name: str) -> Any:
-        attr = super().__getattr__(__name)
+        try:
+            attr = super().__getattr__(__name)
+        except exceptions.Error:
+            raise AttributeError(
+                f'Could not find global variable "{__name}" in ahk',
+                name=__name,
+                obj=self,
+            )
         if isinstance(attr, AhkObject) and attr._ahk_immortal:
             # if the attr is immutable, cache the result
             self.__dict__[__name] = attr

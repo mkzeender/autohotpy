@@ -7,7 +7,9 @@ class Object:
     def Clone(self) -> Self:
         """Returns a shallow copy of an object."""
 
-    def DefineProp(self, name: str, descriptor: Object) -> Self: ...
+    def DefineProp(self, name: str, descriptor: Object) -> Self:
+        """Defines a new own property."""
+
     def DeleteProp(self, name: str) -> Any:
         """Removes an own property from an object."""
 
@@ -20,3 +22,6 @@ class Object:
     def OwnProps(self) -> Iterable[str]:
         """Enumerates an object's own properties."""
     Base: Object
+
+    def __getattr__(self, __name: str) -> Any: ...
+    def __setattr__(self, __name: str, __value: Any) -> None: ...
