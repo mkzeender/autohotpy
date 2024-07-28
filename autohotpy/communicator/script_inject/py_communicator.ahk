@@ -52,6 +52,10 @@ _py_setprop(obj, prop, value, params*) {
     obj.%prop%[params*] := value
 }
 
+_py_instancecheck(inst, cls) {
+    return inst is cls
+}
+
 class _PyCommunicator {
 
     static __New() {
@@ -98,7 +102,7 @@ class _PyCommunicator {
             return map("dtype", _PyParamTypes.VARREF, "ptr", String(ptr))
         }
         if IsObject(val) {
-            immortal := (val is Class) or (val is Func and val.IsBuiltIn)
+            immortal := this.IsImmortal(val)
             if immortal {
                 ptr := ObjPtr(val)
             } else {
@@ -114,7 +118,24 @@ class _PyCommunicator {
         
         return val
     }
-    
+
+    static IsImmortal(_ahk_value) {
+        if (_ahk_value is Class) {
+            try {
+                return %_ahk_value.Prototype.__Class% == _ahk_value
+            } catch {
+                return false
+            }
+        } else if (_ahk_value is Func) {
+            try {
+                return %_ahk_value.Name% == _ahk_value
+            } catch {
+                return false
+            }
+        } else {
+            return false
+        }
+    }   
 
     
 }

@@ -5,6 +5,8 @@ T = TypeVar("T")
 
 
 class VarRef(AhkObject, Generic[T]):
+    __slots__ = ()
+
     @property
     def value(self) -> T:
         return self._ahk_instance.call_method(None, "_py_deref", (self,))

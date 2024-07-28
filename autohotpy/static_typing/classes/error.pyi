@@ -1,9 +1,10 @@
+from typing import Any
 from autohotpy.static_typing.classes.object_ import Object
 
 class Error(Object):
     """Error objects are thrown by built-in code when a runtime error occurs, and may also be thrown explicitly by the script."""
 
-    def __init__(self, message, what=..., extra=...): ...
+    def __init__(self, message: str | int, what: Any = ..., extra: str = ...): ...
 
     Message: str
     What: str
