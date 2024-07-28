@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "autohotpy"
+version = "0.1.0"
+authors = [
+  { name="Marckie Zeender", email="mkzeender@gmail.com" },
+]
+description = "The ultimate automation library for Windows. A bridge between Python and AutoHotkey"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Windows",
+]
+
+[tool.setuptools]
+py-modules = ["autohotpy"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+
+[tool.pyright]
+include = []
+exclude = ["**/node_modules",
+    "**/__pycache__",
+    "src/experimental",
+    "src/typestubs",
+    ".venv",
+    ".pytest_cache"
+]
+ignore = ["src/oldstuff"]
+defineConstant = { DEBUG = true }
+stubPath = "src/stubs"
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+pythonVersion = "3.12"
+pythonPlatform = "Windows"
+
+# executionEnvironments = [
+#   { root = "src/web", pythonVersion = "3.5", pythonPlatform = "Windows", extraPaths = [ "src/service_libs" ] },
+#   { root = "src/sdk", pythonVersion = "3.0", extraPaths = [ "src/backend" ] },
+#   { root = "src/tests", extraPaths = ["src/tests/e2e", "src/sdk" ]},
+#   { root = "src" }
+# ]
+
+
+
+
+[project.urls]
+Homepage = "https://github.com/mkzeender/autohotpy"
+Issues = "https://github.com/mkzeender/autohotpy/issues"
