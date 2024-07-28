@@ -3,7 +3,7 @@ from autohotpy.static_typing.classes import BoolInt, Nothing
 from autohotpy.static_typing.classes.func import Enumerator
 from autohotpy.static_typing.classes.protocols import DoubleIterable, SingleIterable
 
-class Map[KT, VT](SingleIterable[KT], DoubleIterable[KT, VT]):
+class Map[KT, VT](SingleIterable[KT], DoubleIterable[KT, VT]):  # TODO: docs?S
     def __init__(
         self, key1: KT = ..., value1: VT = ..., /, *other_keys_and_values: KT | VT
     ): ...

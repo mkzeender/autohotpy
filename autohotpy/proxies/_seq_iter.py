@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Iterable, Literal, overload
+from typing import TYPE_CHECKING, Iterable, Literal, cast, overload
 
 
 if TYPE_CHECKING:
@@ -61,7 +61,14 @@ def iterator(iterable, n=2):  # type: ignore
 
 
     """
-    enumer = iterable._ahk_instance.call_method(iterable, "__Enum", (n,), {})
+    if TYPE_CHECKING:
+        iterable = cast(AhkObject, iterable)
+
+    if iterable._ahk_type_name == "Enumerator":
+        enumer = iterable
+    else:
+
+        enumer = iterable._ahk_instance.call_method(iterable, "__Enum", (n,), {})
 
     refs: list[VarRef] = [
         iterable._ahk_instance.call_method(None, "VarRef", ()) for _ in range(n)

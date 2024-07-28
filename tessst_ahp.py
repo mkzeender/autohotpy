@@ -5,7 +5,7 @@ from time import perf_counter
 from autohotpy import ahk
 import os
 
-ahk.include(r"testit.ahk")
+# ahk.include(r"testit.ahk")
 
 
 def get_count(obj):
@@ -32,15 +32,15 @@ class Wut:
 
 
 def main():
-    ahk["^q" :: ahk.ExitApp]
-    ahk["^h" :: ahk.caller]
-    ahk["!s"::crap]
+    # ahk["^q" :: ahk.ExitApp]
+    # ahk["^h" :: ahk.caller]
+    # ahk["!s"::crap]
 
-    thing: ahk.Object = ahk.my_obj
+    # thing: ahk.Object = ahk.my_obj
 
-    ref: ahk.VarRef = ahk.VarRef(thing)
+    # ref: ahk.VarRef = ahk.VarRef(thing)
 
-    print(ref.value)
+    # print(ref.value)
 
     # ahk.test_iter({"hi": "cool", "foo": "bar"})
     # print(ahk.OwnProps(ahk.caller("")))
@@ -57,9 +57,6 @@ def main():
 
     # print(f"caller returned {ahk.caller('weee')}")
 
-    print(ahk)
-
-    print("idling...")
     ahk.run_forever()
 
 

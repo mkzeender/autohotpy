@@ -13,7 +13,7 @@ from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.proxies.ahk_script import AhkScript
 from autohotpy.communicator import Communicator
 from autohotpy.communicator.hotkey_factory import HotkeyFactory
-from autohotpy.exceptions import AhkError, ExitApp
+from autohotpy.exceptions import AhkException, ExitApp
 from .communicator import ahkdll
 
 from .global_state import thread_state
@@ -214,9 +214,9 @@ class AhkInstance:
             ret_val = func(*args, **kwargs)
             success = True
         except BaseException as e:
-            if isinstance(e, AhkError):
+            if isinstance(e, AhkException):
                 # e is a wrapper for the ahk Error object, so we unwrap it
-                ret_val = e.error
+                ret_val = e.wrapped_object
             else:
                 ret_val = e
             success = False

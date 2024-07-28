@@ -1,24 +1,37 @@
-from typing import Any, Iterable
+from typing import Any, Iterator, Self
 
-UNSET: Any
+class ComValue[ValT]:
+    """Wraps a value, SafeArray or COM object for use by the script or for passing to a COM method.
 
-class ComValue: ...
+    NOTE: If the class is ByRef, you can deref with an empty tuple:
+    >>> com_val[()] := "some value"
 
-class ComObject(ComValue):
-    def __init__(self, CLSID: str, IID: str = UNSET): ...
-    def __getattr__(self, name: str) -> Any: ...
+    """
 
-class ComObjArray(ComValue):
+    def __new__(
+        cls, var_type: int, value: ValT, flags: int = ...
+    ) -> ComValue | ComValueRef: ...
+
+class ComObjArray[ValT](ComValue[ValT]):
     """Creates a SafeArray for use with COM."""
 
-    def __init__(self, count1, /, *counts): ...
-    def MaxIndex(self, dim: int, /) -> int:
+    def __new__(cls, var_type: int, /, count1: int, *counts: int) -> Self: ...
+    def MaxIndex(self, n: int = 1, /) -> int:
         """Returns the upper bound of the nth dimension. If n is omitted, it defaults to 1."""
 
-    def MinIndex(self, dim: int, /) -> int:
+    def MinIndex(self, n: int = 1, /) -> int:
         """Returns the lower bound of the nth dimension. If n is omitted, it defaults to 1."""
 
-    def Clone(self) -> ComObjArray:
-        """Returns a copy of the array"""
+    def Clone(self) -> Self:
+        """Returns a copy of the array."""
 
-    def __iter__(self) -> Iterable: ...
+    def __iter__(self) -> Iterator[ValT]: ...
+
+class ComObject(ComValue):
+    """Creates a COM object."""
+
+    def __new__(cls, CLSID: str, IID: str = ...) -> Self | ComValue: ...
+    def __getattr__(self, name: str) -> Any: ...
+
+class ComValueRef(ComValue):
+    Ptr: int

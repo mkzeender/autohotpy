@@ -41,7 +41,11 @@ class Communicator:
         if isinstance(data, dict):
             if data["dtype"] == DTypes.AHK_OBJECT:
                 assert factory is not None
-                return factory.create(int(data["ptr"]))
+                return factory.create(
+                    ptr=int(data["ptr"]),
+                    type_name=data["type_name"],
+                    immortal=bool(data["immortal"]),
+                )
             if data["dtype"] == DTypes.INT:
                 return int(data["value"])
             if data["dtype"] == DTypes.PY_OBJECT:

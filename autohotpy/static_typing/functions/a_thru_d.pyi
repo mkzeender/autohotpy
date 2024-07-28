@@ -1,4 +1,4 @@
-from typing import Any, Callable, Literal, overload
+from typing import Callable, Literal, overload
 from autohotpy.proxies.var_ref import VarRef
 
 from autohotpy.static_typing.classes import (
@@ -10,7 +10,6 @@ from autohotpy.static_typing.classes import (
     array,
     Bool,
     BoolInt,
-    NumType,
     Number,
     Nothing,
     MouseButton,
@@ -18,7 +17,7 @@ from autohotpy.static_typing.classes import (
 
 class AThruD:
     @staticmethod
-    def abs(n: NumType, /) -> NumType:
+    def abs[NumType: Number](n: NumType, /) -> NumType:
         """
         Returns the absolute value of the specified number.
 
@@ -84,7 +83,6 @@ class AThruD:
         BlockInput SendMouse
         BlockInput MouseMove
         """
-    Buffer: type[buffer.Buffer]
 
     @staticmethod
     def CallbackCreate(
@@ -107,7 +105,7 @@ class AThruD:
         """Returns the specified number rounded up to the nearest integer (without any .00 suffix)."""
 
     @staticmethod
-    def Chr(n: Number, /) -> str:
+    def Chr(number: int, /) -> str:
         """Returns the string (usually a single character) corresponding to the character code indicated by the specified number."""
 
     @staticmethod
@@ -116,7 +114,6 @@ class AThruD:
         Clicks a mouse button at the specified coordinates. It can also hold down a mouse button, turn the mouse wheel, or move the mouse.
 
         """
-    ClipboardAll = buffer.ClipboardAll
 
     @staticmethod
     def ClipWait(timeout: Number = ..., binary_data: Bool = False, /) -> BoolInt:
@@ -124,52 +121,58 @@ class AThruD:
 
     @staticmethod
     def ComCall(
-        Index: int, ComObj: ComValue | buffer.BufferOrAddress, /, *args_and_types
+        Index: int,
+        ComObj: com_obj.ComValue | buffer.BufferOrAddress,
+        /,
+        *args_and_types,
     ) -> str | int:
         """Calls a native COM interface method by index"""
 
     @staticmethod
-    def ComObjActive(CLSID: str, /) -> ComValue:
+    def ComObjActive(CLSID: str, /) -> com_obj.ComValue:
         """Retrieves a registered COM object."""
-    ComObjArray = com_obj.ComObjArray
 
     @staticmethod
-    def ComObjConnect(
-        ComObj: ComValue, PrefixOrSink: str | object_.Object = ..., /
+    def ComObjConnect[
+        ComValT
+    ](
+        ComObj: com_obj.ComValue[ComValT], PrefixOrSink: str | object_.Object = ..., /
     ) -> Nothing:
         """Connects a COM object's event source to the script, enabling events to be handled."""
-    ComObject = com_obj.ComObject
 
     @staticmethod
-    def ComObjFlags(ComObj: ComObject, NewFlags: int = ..., Mask: int = ..., /) -> int:
-        """Retrieves or changes flags which control a COM wrapper object's behaviour."""
+    def ComObjFlags(
+        ComObj: com_obj.ComObject, NewFlags: int = ..., Mask: int = ..., /
+    ) -> int:
+        """Retrieves or changes flags which control a COM wrapper object's behavior."""
 
     @staticmethod
-    def ComObjFromPtr(DispPtr: int, /) -> ComValue:
+    def ComObjFromPtr(DispPtr: int, /) -> com_obj.ComValue:
         """Wraps a raw IDispatch pointer (COM object) for use by the script."""
 
     @staticmethod
-    def ComObjGet(Name: str, /) -> ComValue:
+    def ComObjGet(Name: str, /) -> com_obj.ComValue:
         """Returns a reference to an object provided by a COM component."""
 
     @overload
     @staticmethod
-    def ComObjQuery(ComObj: ComValue, SID: str, IID: str, /) -> ComValue:
+    def ComObjQuery(
+        ComObj: com_obj.ComValue, SID: str, IID: str, /
+    ) -> com_obj.ComValue:
         """Queries a COM object for an interface or service."""
 
     @overload
     @staticmethod
-    def ComObjQuery(ComObj: ComValue, IID: str, /) -> ComValue:
+    def ComObjQuery(ComObj: com_obj.ComValue, IID: str, /) -> com_obj.ComValue:
         """Queries a COM object for an interface or service."""
 
     @staticmethod
-    def ComObjType(ComObj: ComValue, InfoType: str = ..., /):
+    def ComObjType(ComObj: com_obj.ComValue, InfoType: str = ..., /):
         """Retrieves type information from a COM object."""
 
     @staticmethod
-    def ComObjValue(ComObj: ComValue, /) -> int:
+    def ComObjValue(ComObj: com_obj.ComValue, /) -> int:
         """Retrieves the value or pointer stored in a COM wrapper object."""
-    ComValue = com_obj.ComValue
 
     @staticmethod
     def ControlAddItem(
@@ -606,7 +609,7 @@ class AThruD:
         """Downloads a file from the Internet."""
 
     @staticmethod
-    def DriveEject(drive: str) -> Nothing: ...
+    def DriveEject(drive: str) -> Nothing: ...  # TODO: typing this
     @staticmethod
     def DriveRetract(drive: str) -> Nothing: ...
     @staticmethod

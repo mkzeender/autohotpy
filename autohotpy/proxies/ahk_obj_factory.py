@@ -15,15 +15,21 @@ class AhkObjFactory:
     bound_method_name: str = ""
     inst: AhkInstance = field(init=False)
 
-    def create(self, ptr: int) -> AhkObject:
+    def create(self, ptr: int, type_name: str, immortal: bool) -> AhkObject:
         if self.inst is None:
-            raise RuntimeError("Unable to create ahk proxy object")
+            raise RuntimeError(
+                f"Unable to create ahk proxy object for '{type_name}' object."
+            )
         if self.bind_to is None:
-            return AhkObject(self.inst, pointer=ptr)
+            return AhkObject(
+                self.inst, pointer=ptr, type_name=type_name, immortal=immortal
+            )
         else:
             return AhkBoundProp(
                 self.inst,
                 pointer=ptr,
+                type_name=type_name,
+                immortal=immortal,
                 bound_to=self.bind_to,
                 method_name=self.bound_method_name,
             )
@@ -31,4 +37,4 @@ class AhkObjFactory:
     def create_varref(self, ptr: int) -> VarRef:
         if self.inst is None:
             raise RuntimeError("Unable to create ahk proxy object")
-        return VarRef(self.inst, pointer=ptr)
+        return VarRef(self.inst, pointer=ptr, immortal=False, type_name="VarRef")
