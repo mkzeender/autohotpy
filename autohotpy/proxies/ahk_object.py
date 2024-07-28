@@ -145,6 +145,23 @@ class AhkObject:
     def __subclasscheck__(self, subclass: type) -> bool:
         return bool()
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, AhkObject):
+            return self._ahk_ptr == other._ahk_ptr or (
+                self._ahk_type_name == "Class" == other._ahk_type_name
+                and self._ahk_name == other._ahk_name
+            )
+        elif isinstance(other, str) and self._ahk_type_name == "Class":
+            return self._ahk_name == other
+
+        return False
+
+    def __hash__(self) -> int:
+        if self._ahk_type_name == "Class":
+            return hash(self._ahk_name)
+        else:
+            return hash(self._ahk_ptr)
+
 
 class AhkBoundProp(AhkObject):
     __slots__ = (

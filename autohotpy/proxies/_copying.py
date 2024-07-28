@@ -8,6 +8,7 @@ from autohotpy.proxies._seq_iter import iterator
 if TYPE_CHECKING:
     from autohotpy.proxies.ahk_object import AhkObject
     from autohotpy.static_typing.classes import object_  # type: ignore
+    from autohotpy.static_typing.classes import map as map_  # type: ignore
 
 
 def _from_qualname(qualname: str, location) -> AhkObject:
@@ -80,7 +81,9 @@ def reduce_ahk_obj(self: AhkObject):
     elif self._ahk_type_name == "Map":
         func = ahk.Map
         args = ()
-        for kv in self.__Enum(2):
+        if TYPE_CHECKING:
+            obj = cast(map_.Map, obj)
+        for kv in iterator(obj, 2):
             args += kv
 
     elif self._ahk_type_name in (
