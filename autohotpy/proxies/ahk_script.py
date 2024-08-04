@@ -37,3 +37,9 @@ class AhkScript(AhkObject):
             # if the attr is immutable, cache the result
             self.__dict__[__name] = attr
         return attr
+
+    def __dir__(self) -> set:
+        return {"include", "run_forever"}  # TODO: fill this up!
+
+    def __str__(self) -> str:
+        return "<module autohotpy.ahk>"

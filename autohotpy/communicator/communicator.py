@@ -22,11 +22,13 @@ class Communicator:
         on_exit: Callable,
         on_error: Callable,
         on_call: Callable,
+        post_init: Callable[[], None],
     ):
         self.on_idle = on_idle
         self.on_exit = on_exit
         self.on_error = on_error
         self.on_call = on_call
+        self.post_init = post_init
 
         self.py_references = ReferenceKeeper()
         self.callbacks = Callbacks(self)
@@ -148,6 +150,8 @@ class Communicator:
             c_int, c_uint64, c_uint64
         )(put_return_ptr)
         self.globals_ptr = globals_ptr
+
+        self.post_init()
 
         return 0
 

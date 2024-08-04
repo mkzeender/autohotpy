@@ -64,21 +64,21 @@ class AhkObject:
             self._ahk_instance.set_attr(self, _demangle(__name), __value)
 
     def __dir__(self):
-        def _dir():
-            obj = self
-            while True:
-                try:
-                    yield from obj.OwnProps()
-                    obj = self._ahk_instance.get_attr(
-                        obj,
-                        "base",
-                    )
-                except AttributeError:
-                    break
+        seen = set()
 
-            yield from super().__dir__()
+        obj = self
+        while True:
+            try:
+                seen.update(obj.OwnProps())
+                obj = self._ahk_instance.get_attr(
+                    obj,
+                    "base",
+                )
+            except AttributeError:
+                break
 
-        return set(_dir())
+        seen.update(super(AhkObject, self).__dir__())
+        return seen
 
     def __reduce__(self) -> str | tuple[Any, ...]:
         return reduce_ahk_obj(self)
@@ -142,15 +142,22 @@ class AhkObject:
 
         raise TypeError("isinstance() arg 2 must be a type, Array, tuple, or union")
 
-    def __subclasscheck__(self, subclass: type) -> bool:
-        return bool()
+    def __subclasscheck__(self, subcls: type) -> bool:
+        if self._ahk_type_name == "Class":
+            return bool(
+                subcls._ahk_instance.call_method(None, "HasBase", (subcls, self))
+            )
+        elif self._ahk_type_name == "Array":
+            return any(issubclass(subcls, basecls) for basecls in self)
+
+        else:
+            raise ValueError(
+                f"issubclass() arg 2 must be a type, Array, tuple, or union"
+            )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, AhkObject):
-            return self._ahk_ptr == other._ahk_ptr or (
-                self._ahk_type_name == "Class" == other._ahk_type_name
-                and self._ahk_name == other._ahk_name
-            )
+            return self._ahk_ptr == other._ahk_ptr
         elif isinstance(other, str) and self._ahk_type_name == "Class":
             return self._ahk_name == other
 
