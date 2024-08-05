@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 
 class _Local(threading.local):
     def __init__(self) -> None:
-        super().__init__()
-        self.memo: dict[int | None, AhkObject] | None
+        self.memo: dict[int | None, AhkObject] | None = None
 
 
 _local = _Local()
@@ -28,6 +27,8 @@ class SavedAhkObj(NamedTuple):
 
 @contextmanager
 def _memo[T](obj: T) -> Generator[T, None, None]:
+
+    from autohotpy.proxies.ahk_object import AhkObject
 
     memo = _local.memo
     if memo is None:

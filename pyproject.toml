@@ -21,6 +21,7 @@ py-modules = ["autohotpy"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
+timeout = 30
 
 [tool.pyright]
 include = []

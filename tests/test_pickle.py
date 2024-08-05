@@ -1,5 +1,6 @@
 from autohotpy import ahk
 from pickle import dumps, loads
+import pytest as tst
 
 
 def test_obj():
