@@ -4,10 +4,10 @@ import json
 from typing import Any, Callable
 from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
 from autohotpy.proxies.ahk_object import AhkObject
-from autohotpy.communicator.script_inject.Callbacks import Callbacks
+from autohotpy.communicator.script_inject.callbacks import Callbacks
 from autohotpy.exceptions import ExitApp, throw
 from autohotpy.communicator.references import ReferenceKeeper
-from autohotpy.communicator.script_inject.Callbacks import addr_of
+from autohotpy.communicator.script_inject.callbacks import addr_of
 from autohotpy.communicator.dtypes import DTypes
 from autohotpy.proxies.var_ref import VarRef
 

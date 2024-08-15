@@ -1,4 +1,4 @@
-from typing import Literal, Self
+from typing import Literal, Protocol, Self
 
 Nothing = Literal[""]
 
@@ -25,3 +25,7 @@ MouseButton = Literal[
     "WheelLeft",
     "WheelRight",
 ]
+
+class Prototype(Protocol):
+    __Class: str
+    base: Prototype | Nothing

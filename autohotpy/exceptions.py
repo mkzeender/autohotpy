@@ -1,4 +1,5 @@
 from __future__ import annotations
+import builtins
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
@@ -78,11 +79,23 @@ class Error(AhkException):
         return self.msg
 
 
-class MemoryError(Error, MemoryError):
+class MemoryError(Error, builtins.MemoryError):
     pass
 
 
-class OSError(Error, OSError):
+class OSError(Error, builtins.OSError):
+    pass
+
+
+class TargetError(Error):
+    pass
+
+
+class TimeoutError(Error, builtins.TimeoutError):
+    pass
+
+
+class TypeError(Error, builtins.TypeError):
     pass
 
 
@@ -98,15 +111,15 @@ class MethodError(MemberError):
     pass
 
 
-class IndexError(Error, IndexError):
+class IndexError(Error, builtins.IndexError):
     pass
 
 
-class KeyError(IndexError, KeyError):
+class KeyError(IndexError, builtins.KeyError):
     pass
 
 
-class ValueError(Error, ValueError):
+class ValueError(Error, builtins.ValueError):
     pass
 
 

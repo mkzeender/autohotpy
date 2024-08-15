@@ -4,10 +4,11 @@ import os
 from os import path
 from typing import TYPE_CHECKING
 
+
 from ..dtypes import DTypes
 
 if TYPE_CHECKING:
-    from .Callbacks import CallbackPtrs, PythonConsts
+    from .callbacks import CallbackPtrs, PythonConsts, MutableMappingMixin
 
 
 def include(name):
@@ -25,7 +26,9 @@ def create_user_script(script: tuple[str, ...], f: CallbackPtrs) -> str:
     """
 
 
-def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
+def create_injection_script(
+    f: CallbackPtrs, a: PythonConsts, m: MutableMappingMixin
+) -> str:
     cwd = os.getcwd()
 
     dtype_enum = "\t\t\t\t\n".join(
@@ -38,6 +41,11 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
 
     consts_enum = "\t\t\t\t\n".join(
         f"static {k} := _py_object_from_id({v})" for k, v in asdict(a).items()
+    )
+
+    map_mixin = "\t\t\t\t\n".join(
+        f"""Map.Prototype.DefineProp("{k}", {{get: (p*) => {{}}, call: _py_object_from_id({v})}})"""
+        for k, v in asdict(m).items()
     )
 
     return f"""
@@ -74,6 +82,8 @@ def create_injection_script(f: CallbackPtrs, a: PythonConsts) -> str:
             {consts_enum}
         }}
         Python := _Python.pylib
+
+        {map_mixin}
         
         
         DllCall({f.give_pointers}

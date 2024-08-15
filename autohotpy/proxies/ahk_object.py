@@ -9,13 +9,12 @@ from autohotpy.proxies._seq_iter import fmt_item, iterator
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
-    from autohotpy.proxies.var_ref import VarRef
 
 
 def _demangle(name: str) -> str:
     if name.endswith("__"):
         return name
-    lead, sep, end = name.rpartition("__")
+    _, sep, end = name.rpartition("__")
     return sep + end
 
 
@@ -62,6 +61,9 @@ class AhkObject:
             super().__setattr__(__name, __value)
         else:
             self._ahk_instance.set_attr(self, _demangle(__name), __value)
+
+    def __delattr__(self, __name: str) -> None:
+        self._ahk_instance.call_method(self, "DeleteProp", (__name,))
 
     def __dir__(self):
         seen = set()
@@ -113,9 +115,19 @@ class AhkObject:
     def __repr__(self):
         if self._ahk_ptr is None:
             return super().__repr__()
-        if self._ahk_type_name in ("Func", "Class"):
-            return f"ahk.{self.__name__}"
-        return f"<Ahk {self._ahk_type_name} object at {self._ahk_ptr:#x}>"
+        if self._ahk_type_name in ("Func", "Class", "Prototype"):
+            return f"ahk.{self._ahk_name}"
+        if self._ahk_type_name == "Object":
+            return f"ahk.Object({', '.join(name + '=' + repr(getattr(self, name)) for name in self.OwnProps())})"
+        if self._ahk_type_name == "Array":
+            return f"ahk.Array({', '.join(repr(elt) for elt in self)})"
+        # if self._ahk_type_name == "Map": TODO: fix this
+        #     dct = dict(self.items())
+        #     if all(isinstance(k, str) for k in dct):
+        #         return f"ahk.Map({', '.join(name + '=' + repr(v) for name, v in dct.items())})"
+
+        #     return f"<ahk.Map({dct!r})"
+        return f"<ahk.{self._ahk_type_name} object at {self._ahk_ptr:#x}>"
 
     def __getitem__(self, item) -> Any:
         return self._ahk_instance.call_method(
@@ -127,8 +139,26 @@ class AhkObject:
             None, "_py_setitem", (self, value, *fmt_item(item))
         )
 
+    def __delitem__(self, item):
+        self._ahk_instance.call_method(self, "Delete", (item,))
+
+    def __contains__(self, item):
+        self._ahk_instance.call_method(self, "Has", (item,))
+
     def __iter__(self) -> Iterator:
-        return iterator(self, 1)  # type: ignore
+        return iterator(self, 1)  # type: ignore # TODO: fix this
+
+    def __len__(self) -> int:
+        try:
+            return self.Length
+        except AttributeError:
+            try:
+                return self.Count
+            except AttributeError:
+                return NotImplemented
+
+    def __bool__(self) -> bool:
+        return True  # TODO: fix bool operators?
 
     def __instancecheck__(self, instance: Any) -> bool:
         if self._ahk_type_name == "Class":

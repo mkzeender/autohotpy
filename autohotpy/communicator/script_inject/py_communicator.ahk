@@ -7,7 +7,12 @@ _py_call_ahk_function(param_ptr) {
     }
     args := call_info['args']
     for i, v in args {
-        call_info['args'][i] := _PyCommunicator.value_from_data(v)
+        args[i] := _PyCommunicator.value_from_data(v)
+    }
+    kwds := call_info['kwargs']
+    if kwds.Count {
+        kwds.Base := Kwargs.Prototype
+        args.Push(kwds)
     }
     obj := _PyCommunicator.value_from_data(call_info['obj'])
     method := _PyCommunicator.value_from_data(call_info['method'])
@@ -87,7 +92,7 @@ class _PyCommunicator {
             if val["dtype"] == _PyParamTypes.PY_OBJECT {
                 return _py_object_from_id(val["ptr"])
             }
-            Msgbox 'error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT
+            throw Error('error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT)
         }
         return val
     }
