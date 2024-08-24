@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING, NoReturn, TypeGuard
+from xml.dom.minidom import Attr
 
 from autohotpy import exceptions
+from autohotpy._unset_type import UNSET, UnsetType
 from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.proxies._sqr_brac_syntax import square_bracket_syntax
 
@@ -28,14 +30,18 @@ class AhkScript(AhkObject):
         try:
             attr = super().__getattr__(__name)
         except exceptions.Error:
-            raise AttributeError(
-                f'Could not find global variable "{__name}" in ahk',
-                name=__name,
-                obj=self,
-            )
+            if (lname := __name.lower()) != __name:
+                try:
+                    attr = getattr(self, lname)
+                except AttributeError:
+                    _not_found(self, __name)
+            else:
+                _not_found(self, __name)
+
         if isinstance(attr, AhkObject) and attr._ahk_immortal:
-            # if the attr is immutable, cache the result
+            # if the attr is an immortal global (i.e. a function), cache the result in self
             self.__dict__[__name] = attr
+            self.__dict__[__name.lower()] = attr
         return attr
 
     def __dir__(self) -> set:
@@ -43,3 +49,18 @@ class AhkScript(AhkObject):
 
     def __str__(self) -> str:
         return "<module autohotpy.ahk>"
+
+    def IsSet(self, value: Any = UNSET, /):
+        return value is not UNSET
+
+    isset = IsSet
+    UNSET: UnsetType = UNSET
+    unset: UnsetType = UNSET
+
+
+def _not_found(ahk, __name: str, /) -> NoReturn:
+    raise AttributeError(
+        f'No function, class, or global variable named "{__name}" exists',
+        name=__name,
+        obj=ahk,
+    ) from None

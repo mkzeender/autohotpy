@@ -34,6 +34,9 @@ class _py_caller_job {
         DllCall(_PyCallbacks.CALL_METHOD, "str", this.call_data, "int")
 
         if Integer(this.success) {
+            if this.ret_val == _PyCommunicator.UNSET_  {
+                throw Error('A function tried to return an unset variable')
+            }
             return this.ret_val
         }
         else {
@@ -49,6 +52,7 @@ _py_call_method(obj, method, args) {
 _py_put_return_value(job_p, data_p) {
     job := ObjFromPtrAddRef(job_p)
     data := JSON.Parse(StrGet(data_p))
-    job.ret_val := _PyCommunicator.value_from_data(data["value"])
+    _PyCommunicator.value_from_data(data["value"], &ret_val)
+    job.ret_val := ret_val
     job.success := data["success"]
 }

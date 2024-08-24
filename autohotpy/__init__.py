@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING
 from .global_state import config
 from .convenience.py_lib import pylib as Python
 from .ahk_run import get_ahk
+from ._unset_type import UNSET
+from .proxies._seq_iter import iterator
 
 
 if TYPE_CHECKING:
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     ahk = autohotpy.static_typing.AhkBuiltins()
 
 
-__all__ = ["ahk", "get_ahk", "Python", "config"]
+__all__ = ["ahk", "get_ahk", "Python", "config", "UNSET", "iterator"]
 
 
 def __getattr__(__name):

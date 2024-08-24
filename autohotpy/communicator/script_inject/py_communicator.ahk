@@ -7,16 +7,24 @@ _py_call_ahk_function(param_ptr) {
     }
     args := call_info['args']
     for i, v in args {
-        args[i] := _PyCommunicator.value_from_data(v)
+        _PyCommunicator.value_from_data(v, &arg_entry)
+        if arg_entry != _PyCommunicator.UNSET_
+            args[i] := arg_entry
+        else
+            args.Delete(i)
     }
     kwds := call_info['kwargs']
     if kwds.Count {
         kwds.Base := Kwargs.Prototype
         args.Push(kwds)
     }
-    obj := _PyCommunicator.value_from_data(call_info['obj'])
-    method := _PyCommunicator.value_from_data(call_info['method'])
+    _PyCommunicator.value_from_data(call_info['obj'], &obj)
+    _PyCommunicator.value_from_data(call_info['method'], &method)
+    
     try {
+        if obj == _PyCommunicator.UNSET_ or method == _PyCommunicator.UNSET_ {
+            throw Error('Callable or Method was unset')
+        }
         result := obj.%method%(args*)
         result_data := map("success", true, "value", _PyCommunicator.value_to_data(result))
     }
@@ -37,16 +45,22 @@ _py_get_ahk_attr(obj, name) {
     return obj.%name%
 }
 
-_py_set_ahk_attr(obj, name, value) {
-    obj.%name% := value
+_py_set_ahk_attr(obj, name, value := unset) {
+    if IsSet(value)
+        obj.%name% := value
+    else
+        obj.DeleteProp(name)
 }
 
 _py_getitem(obj, params*) {
     return obj[params*]
 }
 
-_py_setitem(obj, value, params*) {
-    obj[params*] := value
+_py_setitem(obj, value := UNSET, params*) {
+    If IsSet(value)
+        obj[params*] := value
+    else
+        obj.Delete(params*)
 }
 
 _py_getprop(obj, prop, params*) {
@@ -63,6 +77,8 @@ _py_instancecheck(inst, cls) {
 
 class _PyCommunicator {
 
+    static UNSET_ := Object()
+
     static __New() {
         this.call_ptr := CallbackCreate(_py_call_ahk_function, "F")
         this.call_threadsafe_ptr := CallbackCreate(_py_call_ahk_function)
@@ -76,25 +92,31 @@ class _PyCommunicator {
             )
     }
     
-    static value_from_data(val) {
+    static value_from_data(val, &out) {
         
         if val is Map {
             if (
                 val["dtype"] == _PyParamTypes.AHK_OBJECT or
                 val["dtype"] == _PyParamTypes.VARREF
             ) {
-                val := ObjFromPtrAddRef(val["ptr"])
-                return val
+                out := ObjFromPtrAddRef(val["ptr"])
+                return
             }
             if val["dtype"] == _PyParamTypes.INT {
-                return Integer(val["value"])
+                out := Integer(val["value"])
+                return
             }
             if val["dtype"] == _PyParamTypes.PY_OBJECT {
-                return _py_object_from_id(val["ptr"])
+                out := _py_object_from_id(val["ptr"])
+                return
+            }
+            if val["dtype"] == _PyParamTypes.UNSET {
+                out := this.UNSET_
+                return
             }
             throw Error('error ' val["dtype"] " != " _PyParamTypes.AHK_OBJECT)
         }
-        return val
+        out := val
     }
 
     static value_to_data(val) {

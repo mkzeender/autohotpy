@@ -2,6 +2,7 @@ from __future__ import annotations
 from ctypes import CFUNCTYPE, c_int, c_uint64, c_wchar_p
 import json
 from typing import TYPE_CHECKING, Any, Callable
+from autohotpy._unset_type import UNSET
 from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.communicator.script_inject.callbacks import Callbacks
 from autohotpy.exceptions import ExitApp, throw
@@ -12,9 +13,6 @@ from autohotpy.proxies.var_ref import VarRef
 
 if TYPE_CHECKING:
     from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
-
-
-UNSET = object()
 
 
 class Communicator:
@@ -57,6 +55,8 @@ class Communicator:
                     dtype=dtype,
                     immortal=bool(data["immortal"]),
                 )
+            if dtype == DTypes.UNSET:
+                return UNSET
             if dtype == DTypes.INT:
                 return int(data["value"])
             if dtype == DTypes.PY_OBJECT:
@@ -66,6 +66,8 @@ class Communicator:
             return data
 
     def value_to_data(self, value):
+        if value is UNSET:
+            return dict(dtype=DTypes.UNSET.value)
         if isinstance(value, bool):
             value = int(value)
         if isinstance(value, VarRef):

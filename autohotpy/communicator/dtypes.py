@@ -7,6 +7,7 @@ from typing import Any
 
 class DTypes(StrEnum):
     NONE = auto()
+    UNSET = auto()
     INT = auto()
     FLOAT = auto()
     STR = auto()

@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
 from autohotpy import exceptions
+from autohotpy._unset_type import UNSET
 from autohotpy.proxies._cached_prop import cached_prop
 from autohotpy.proxies._copying import reduce_ahk_obj
 from autohotpy.proxies._seq_iter import fmt_item, iterator
@@ -63,7 +64,7 @@ class AhkObject:
             self._ahk_instance.set_attr(self, _demangle(__name), __value)
 
     def __delattr__(self, __name: str) -> None:
-        self._ahk_instance.call_method(self, "DeleteProp", (__name,))
+        self.__setattr__(__name, UNSET)
 
     def __dir__(self):
         seen = set()
@@ -140,7 +141,7 @@ class AhkObject:
         )
 
     def __delitem__(self, item):
-        self._ahk_instance.call_method(self, "Delete", (item,))
+        self.__setitem__(item, UNSET)
 
     def __contains__(self, item):
         self._ahk_instance.call_method(self, "Has", (item,))

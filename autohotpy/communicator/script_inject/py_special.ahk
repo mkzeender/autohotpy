@@ -17,20 +17,39 @@ class ObjBindProp {
     }
 }
 
-_py_create_ref(this, value := "") {
-    return &value
-}
-
-_py_set_ref(&ref, value) {
-    ref := value
-}
-
-_py_deref(&ref) {
+_py_create_ref(this, value := unset) {
+    is_set := IsSet(value)
+    ref := &value
+    if not is_set
+        _py_unset_ref(ref)
     return ref
+
+}
+
+_py_set_ref(ref, new_value) {
+    %ref% := new_value
+}
+
+_py_unset_ref(ref_to_unset) {
+    static _empty := Array( , 0)
+    _empty.__Enum(1)(ref_to_unset)
+}
+
+_py_delete_ref_value(ref, name) {
+    if name = 'value' {
+        _py_unset_ref(ref)
+    }
+    else {
+        throw PropertyError('VarRef has no property "' name '"')
+    }
+}
+
+_py_deref(ref) {
+    return %ref%
 }
 
 VarRef.Call := _py_create_ref
-
+VarRef.Prototype.DeleteProp := _py_delete_ref_value
 (Object.DefineProp)(VarRef.Prototype, 'value', {get: _py_deref, set: _py_set_ref})
 
 _py_object_from_kwargs(obj, kw := unset) {
