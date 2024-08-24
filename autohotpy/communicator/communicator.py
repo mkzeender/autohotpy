@@ -1,8 +1,7 @@
 from __future__ import annotations
 from ctypes import CFUNCTYPE, c_int, c_uint64, c_wchar_p
 import json
-from typing import Any, Callable
-from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
+from typing import TYPE_CHECKING, Any, Callable
 from autohotpy.proxies.ahk_object import AhkObject
 from autohotpy.communicator.script_inject.callbacks import Callbacks
 from autohotpy.exceptions import ExitApp, throw
@@ -10,6 +9,9 @@ from autohotpy.communicator.references import ReferenceKeeper
 from autohotpy.communicator.script_inject.callbacks import addr_of
 from autohotpy.communicator.dtypes import DTypes
 from autohotpy.proxies.var_ref import VarRef
+
+if TYPE_CHECKING:
+    from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
 
 
 UNSET = object()
@@ -41,20 +43,25 @@ class Communicator:
 
     def value_from_data(self, data, factory: AhkObjFactory | None) -> Any:
         if isinstance(data, dict):
-            if data["dtype"] == DTypes.AHK_OBJECT:
+            dtype = DTypes(data["dtype"])
+            if dtype in (
+                DTypes.AHK_OBJECT,
+                DTypes.VARREF,
+                DTypes.AHK_MAP,
+                DTypes.AHK_ARRAY,
+            ):
                 assert factory is not None
                 return factory.create(
                     ptr=int(data["ptr"]),
                     type_name=data["type_name"],
+                    dtype=dtype,
                     immortal=bool(data["immortal"]),
                 )
-            if data["dtype"] == DTypes.INT:
+            if dtype == DTypes.INT:
                 return int(data["value"])
-            if data["dtype"] == DTypes.PY_OBJECT:
+            if dtype == DTypes.PY_OBJECT:
                 return self.py_references.obj_from_ptr(int(data["ptr"]))
-            if data["dtype"] == DTypes.VARREF:
-                assert factory is not None
-                return factory.create_varref(int(data["ptr"]))
+
         else:
             return data
 
