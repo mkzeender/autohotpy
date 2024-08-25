@@ -1,3 +1,4 @@
+from typing import Callable
 import pytest
 from autohotpy import ahk
 from autohotpy.communicator.references import set_debug
@@ -23,6 +24,13 @@ def _raises():
     raise ValueError("well darn")
 
 
+def _generate_stack(stack_size: int, callback: Callable, args: tuple):
+    if stack_size > 0:
+        return f(_generate_stack, stack_size - 1, callback, args)
+    else:
+        return callback(*args)
+
+
 def test_stack():
 
     assert f(_returns) == "hello"
@@ -30,8 +38,13 @@ def test_stack():
 
     assert f(_returns_obj) is thingy
 
+    assert _generate_stack(10, _returns_obj, ()) is thingy
+
 
 def test_raise():
 
     with pytest.raises(ValueError):
         f(_raises)
+
+    with pytest.raises(ValueError):
+        _generate_stack(10, _raises, ())

@@ -92,12 +92,16 @@ class Communicator:
         factory: AhkObjFactory,
         _call: Callable,
     ) -> Any:
-        ret_val: Any = UNSET
+
+        result: Any = UNSET
+        success: int = 0
 
         @CFUNCTYPE(c_int, c_wchar_p)
         def ret_callback(val_data: str):
-            nonlocal ret_val
+            nonlocal result, success
             ret_val = json.loads(val_data)
+            result = self.value_from_data(ret_val["value"], factory)
+            success = int(ret_val["success"])
             return 0
 
         obj_or_globals = (
@@ -122,14 +126,12 @@ class Communicator:
             )
         )
 
-        _call(arg_data)  # sets ret_val
+        _call(arg_data)  # sets result
 
-        if ret_val is UNSET:
-            raise ExitApp("unknown", 1)
+        # if ret_val is UNSET:
+        #     raise ExitApp("unknown", 1)
 
-        result = self.value_from_data(ret_val["value"], factory)
-
-        if int(ret_val["success"]):
+        if success:
             return result
         else:
             throw(result)
