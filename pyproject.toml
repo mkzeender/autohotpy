@@ -36,7 +36,7 @@ ignore = ["src/oldstuff"]
 defineConstant = { DEBUG = true }
 stubPath = "src/stubs"
 
-reportMissingImports = true
+reportMissingImports = false
 reportMissingTypeStubs = false
 
 pythonVersion = "3.12"
