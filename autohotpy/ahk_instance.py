@@ -225,11 +225,14 @@ class AhkInstance:
         args = [vfd(arg, factory=factory) for arg in data["args"]]
         kwargs = {}
         # kwargs = {k: vfd(v, factory=factory) for k, v in data["kwargs"].items()}
+        # TODO: kwargs
 
         if method_name:
             func = getattr(obj, method_name)
         else:
             func = obj
+
+        # print(f"calling {func}")
 
         try:
             ret_val = func(*args, **kwargs)

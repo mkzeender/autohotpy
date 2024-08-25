@@ -156,7 +156,9 @@ class AhkObject:
             try:
                 return self.Count
             except AttributeError:
-                return NotImplemented
+                raise NotImplementedError(
+                    f'"{self._ahk_type_name}" object does not have a length.'
+                )
 
     def __bool__(self) -> bool:
         return True  # TODO: fix bool operators?
@@ -171,12 +173,16 @@ class AhkObject:
         elif self._ahk_type_name == "Array":
             return any(isinstance(instance, cls) for cls in self)
 
-        raise TypeError("isinstance() arg 2 must be a type, Array, tuple, or union")
+        raise TypeError("isinstance() arg 2 must be a type, array, tuple, or union")
 
     def __subclasscheck__(self, subcls: type) -> bool:
         if self._ahk_type_name == "Class":
+            if not isinstance(subcls, AhkObject):
+                return False
             return bool(
-                subcls._ahk_instance.call_method(None, "HasBase", (subcls, self))
+                subcls._ahk_instance.call_method(
+                    None, "_py_subclasscheck", (subcls, self)
+                )
             )
         elif self._ahk_type_name == "Array":
             return any(issubclass(subcls, basecls) for basecls in self)

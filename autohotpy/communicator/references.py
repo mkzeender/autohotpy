@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
+
+_debug: References | None = None
+
+
+def set_debug(debug: bool):
+    global _debug
+    if debug:
+        _debug = References()
+    else:
+        _debug = None
 
 
 @dataclass(slots=True)
@@ -41,11 +51,13 @@ class References:
     def decrement_obj(self, obj):
         self.decrement_ptr(id(obj))
 
-    def decrement_ptr(self, ptr: int):
+    def decrement_ptr(self, ptr: int) -> RefWrapper | None:
         ref = self._dict[ptr]
         ref.count -= 1
         if ref.count <= 0:
             del self._dict[ptr]
+            return ref
+        return None
 
     def get(self, ptr: int):
         return self._dict[ptr].value
@@ -72,6 +84,7 @@ class ReferenceKeeper:
     def __init__(self) -> None:
         self.references = References()
         self.immortals = References()
+        self.collected = References()
 
     def obj_to_ptr_add_ref(self, obj) -> int:
         if id(obj) not in self.immortals:
@@ -88,13 +101,26 @@ class ReferenceKeeper:
         return id(obj)
 
     def obj_from_ptr(self, ptr: int) -> Any:
-        if ptr in self.immortals:
-            return self.immortals.get(ptr)
-        return self.references.get(ptr)
+        try:
+            if ptr in self.immortals:
+                return self.immortals.get(ptr)
+            return self.references.get(ptr)
+        except KeyError:
+            if _debug is not None:
+                val = _debug.get(ptr)
+                raise RuntimeError(
+                    f"Tried to access an object that has already been cleared: ptr={ptr}, value={val!r}'"
+                )
+            else:
+                raise RuntimeError(
+                    f"Tried to access ptr {ptr} which has already been cleared. Try debugging with autohotpy.communicator.references.set_debug(True)"
+                ) from None
 
     def obj_free(self, ptr: int):
         if ptr not in self.immortals:
-            self.references.decrement_ptr(ptr)
+            ref = self.references.decrement_ptr(ptr)
+            if _debug is not None and ref is not None:
+                _debug.add(ref.value)
 
     def get_refcount(self, obj_or_ptr: int | Any) -> int | Literal["immortal"]:
         if isinstance(obj_or_ptr, int):

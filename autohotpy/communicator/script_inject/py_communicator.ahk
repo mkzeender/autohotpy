@@ -75,6 +75,10 @@ _py_instancecheck(inst, cls) {
     return inst is cls
 }
 
+_py_subclasscheck(cls, basecls) {
+    return HasBase(cls, basecls)
+}
+
 class _PyCommunicator {
 
     static UNSET_ := Object()

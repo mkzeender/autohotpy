@@ -50,7 +50,7 @@ _py_call_method(obj, method, args) {
 }
 
 _py_put_return_value(job_p, data_p) {
-    job := ObjFromPtrAddRef(job_p)
+    job := ObjFromPtrAddRef(job_p) ; TODO: this maybe leaks memory?
     data := JSON.Parse(StrGet(data_p))
     _PyCommunicator.value_from_data(data["value"], &ret_val)
     job.ret_val := ret_val
