@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from ..dtypes import DTypes
 
 if TYPE_CHECKING:
-    from .callbacks import CallbackPtrs, PythonConsts, MutableMappingMixin
+    from .callbacks_ import CallbackPtrs, PythonConsts, MutableMappingMixin
 
 
 def include(name):
