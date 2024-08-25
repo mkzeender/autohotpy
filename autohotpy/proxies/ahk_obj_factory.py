@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from autohotpy.communicator.dtypes import DTypes
 from autohotpy.proxies.ahk_object import AhkBoundProp, AhkObject
 from autohotpy.proxies.var_ref import VarRef
 
@@ -15,7 +16,13 @@ class AhkObjFactory:
     bound_method_name: str = ""
     inst: AhkInstance = field(init=False)
 
-    def create(self, ptr: int, type_name: str, immortal: bool) -> AhkObject:
+    def create(
+        self,
+        ptr: int,
+        type_name: str,
+        immortal: bool,
+        dtype: DTypes,  # TODO: handle Map and Array
+    ) -> AhkObject:
         if self.inst is None:
             raise RuntimeError(
                 f"Unable to create ahk proxy object for '{type_name}' object."

@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from collections.abc import MutableMapping as Mapping
+
 from autohotpy.convenience.py_lib import pylib
 
 if TYPE_CHECKING:
@@ -57,16 +59,25 @@ class Callbacks:
         self.consts = PythonConsts(
             getattr=otim(getattr),
             setattr=otim(setattr),
-            none=otim(setattr),
+            none=otim(None),
             on_error=otim(comm.on_error),
             pylib=otim(pylib),
             iter=otim(iter),
             next=otim(next),
             StopIteration=otim(StopIteration),
         )
+        self.mut_map_mixin = MutableMappingMixin(
+            keys=otim(Mapping.keys),
+            items=otim(Mapping.items),
+            values=otim(Mapping.values),
+            pop=otim(Mapping.pop),
+            popitem=otim(Mapping.popitem),
+            update=otim(Mapping.update),
+            setdefault=otim(Mapping.setdefault),
+        )
 
     def create_init_script(self):
-        return create_injection_script(self.ptrs, self.consts)
+        return create_injection_script(self.ptrs, self.consts, self.mut_map_mixin)
 
     def create_user_script(self, script):
         return create_user_script(script, self.ptrs)
@@ -91,3 +102,14 @@ class PythonConsts:
     iter: int
     next: int
     StopIteration: int
+
+
+@dataclass
+class MutableMappingMixin:
+    keys: int
+    items: int
+    values: int
+    pop: int
+    popitem: int
+    update: int
+    setdefault: int

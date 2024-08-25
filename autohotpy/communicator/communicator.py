@@ -1,18 +1,18 @@
 from __future__ import annotations
 from ctypes import CFUNCTYPE, c_int, c_uint64, c_wchar_p
 import json
-from typing import Any, Callable
-from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
+from typing import TYPE_CHECKING, Any, Callable
+from autohotpy._unset_type import UNSET
 from autohotpy.proxies.ahk_object import AhkObject
-from autohotpy.communicator.script_inject.Callbacks import Callbacks
-from autohotpy.exceptions import ExitApp, throw
+from autohotpy.communicator.script_inject.callbacks_ import Callbacks
+from autohotpy.exceptions import throw
 from autohotpy.communicator.references import ReferenceKeeper
-from autohotpy.communicator.script_inject.Callbacks import addr_of
+from autohotpy.communicator.script_inject.callbacks_ import addr_of
 from autohotpy.communicator.dtypes import DTypes
 from autohotpy.proxies.var_ref import VarRef
 
-
-UNSET = object()
+if TYPE_CHECKING:
+    from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
 
 
 class Communicator:
@@ -22,11 +22,13 @@ class Communicator:
         on_exit: Callable,
         on_error: Callable,
         on_call: Callable,
+        post_init: Callable[[], None],
     ):
         self.on_idle = on_idle
         self.on_exit = on_exit
         self.on_error = on_error
         self.on_call = on_call
+        self.post_init = post_init
 
         self.py_references = ReferenceKeeper()
         self.callbacks = Callbacks(self)
@@ -39,24 +41,33 @@ class Communicator:
 
     def value_from_data(self, data, factory: AhkObjFactory | None) -> Any:
         if isinstance(data, dict):
-            if data["dtype"] == DTypes.AHK_OBJECT:
+            dtype = DTypes(data["dtype"])
+            if dtype in (
+                DTypes.AHK_OBJECT,
+                DTypes.VARREF,
+                DTypes.AHK_MAP,
+                DTypes.AHK_ARRAY,
+            ):
                 assert factory is not None
                 return factory.create(
                     ptr=int(data["ptr"]),
                     type_name=data["type_name"],
+                    dtype=dtype,
                     immortal=bool(data["immortal"]),
                 )
-            if data["dtype"] == DTypes.INT:
+            if dtype == DTypes.UNSET:
+                return UNSET
+            if dtype == DTypes.INT:
                 return int(data["value"])
-            if data["dtype"] == DTypes.PY_OBJECT:
+            if dtype == DTypes.PY_OBJECT:
                 return self.py_references.obj_from_ptr(int(data["ptr"]))
-            if data["dtype"] == DTypes.VARREF:
-                assert factory is not None
-                return factory.create_varref(int(data["ptr"]))
+
         else:
             return data
 
     def value_to_data(self, value):
+        if value is UNSET:
+            return dict(dtype=DTypes.UNSET.value)
         if isinstance(value, bool):
             value = int(value)
         if isinstance(value, VarRef):
@@ -81,12 +92,16 @@ class Communicator:
         factory: AhkObjFactory,
         _call: Callable,
     ) -> Any:
-        ret_val: Any = UNSET
+
+        result: Any = UNSET
+        success: int = 0
 
         @CFUNCTYPE(c_int, c_wchar_p)
         def ret_callback(val_data: str):
-            nonlocal ret_val
+            nonlocal result, success
             ret_val = json.loads(val_data)
+            result = self.value_from_data(ret_val["value"], factory)
+            success = int(ret_val["success"])
             return 0
 
         obj_or_globals = (
@@ -111,14 +126,12 @@ class Communicator:
             )
         )
 
-        _call(arg_data)  # sets ret_val
+        _call(arg_data)  # sets result
 
-        if ret_val is UNSET:
-            raise ExitApp("unknown", 1)
+        # if ret_val is UNSET:
+        #     raise ExitApp("unknown", 1)
 
-        result = self.value_from_data(ret_val["value"], factory)
-
-        if int(ret_val["success"]):
+        if success:
             return result
         else:
             throw(result)
@@ -148,6 +161,8 @@ class Communicator:
             c_int, c_uint64, c_uint64
         )(put_return_ptr)
         self.globals_ptr = globals_ptr
+
+        self.post_init()
 
         return 0
 

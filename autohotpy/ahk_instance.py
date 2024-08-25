@@ -1,10 +1,15 @@
 from __future__ import annotations
+from collections.abc import Generator
+from concurrent.futures import Future
+from contextlib import contextmanager
+from queue import Empty, Queue
+from socket import timeout
 import sys
+from time import sleep, time
 import traceback
-from typing import Any
+from typing import TYPE_CHECKING, Any, NoReturn, final
 
 from enum import StrEnum, auto
-import os
 import threading
 from ctypes import c_int, c_uint, c_wchar_p
 from autohotpy.proxies.ahk_obj_factory import AhkObjFactory
@@ -16,8 +21,9 @@ from autohotpy.communicator.hotkey_factory import HotkeyFactory
 from autohotpy.exceptions import AhkException, ExitApp
 from .communicator import ahkdll
 
-from .global_state import thread_state
-from contextlib import chdir
+
+if TYPE_CHECKING:
+    from autohotpy.static_typing import AhkBuiltins
 
 
 class AhkState(StrEnum):
@@ -28,116 +34,126 @@ class AhkState(StrEnum):
 
 
 class AhkInstance:
-    def __init__(self, *script) -> None:
-        thread_state.current_instance = self
-        self._autoexec_condition = threading.Condition()
-        self._job_queue: c_wchar_p | bool = False
+    def __init__(self, ctrl_c_exitapp: bool) -> None:
+        self.ctrl_c_exitapp = ctrl_c_exitapp
+        self._queue = Queue[tuple[c_wchar_p, Future[None]] | None](maxsize=1)
+        self._addscript_queue = Queue[None](maxsize=1)
 
         self._error = None
         self._exit_code: int | None = None
         self._exit_reason: str = ""
-        self.state: AhkState = AhkState.INITIALIZING
+        self._initialized = False
 
         self._thread_id = c_uint(ahkdll.new_thread("Persistent", "", "", c_int(1)))
         self._py_thread_id = threading.get_ident()
+        self._ahk_mainthread: int | None = None
 
         self.communicator = Communicator(
             on_idle=self._autoexec_thread_callback,
             on_exit=self._exit_app_callback,
             on_error=self._error_callback,
             on_call=self._call_method_callback,
+            post_init=self._post_init_callback,
         )
 
         # inject a backend library into the script, for communicating with python
         modded_script = self.communicator.create_init_script()
+        self.add_script(modded_script)
+        # self._post_init is called here from the ahk mainthread
 
-        self._add_script(modded_script, runwait=1)
+        self._globals = AhkScript(self)
 
-        self.add_script(*script)
+    def get_globals(self) -> AhkBuiltins:
+        return self._globals  # type: ignore
 
-    def add_script(self, *script: str):
-        if thread_state.get_thread_type(self) != "autoexec":
+    def add_script(self, *script_lines: str):
+        if self._py_thread_id != threading.get_ident():
             raise RuntimeError(
-                "Global-scope ahk statements cannot be run in the middle of a function. Try running this in a different thread."
+                "Global-scope ahk statements cannot be run in the middle of a function. Try running this at the module level, or use a function instead."
             )
-        with (cond := self._autoexec_condition):
-            while self._job_queue is not False or self.state == AhkState.RUNNING:
-                if self.state == AhkState.CLOSED:
-                    raise RuntimeError("Interpreter is already closed")
-                cond.wait(timeout=1)
 
-            # request the old script to end, and wait for it to do so
-            if self.state != AhkState.INITIALIZING:
-                self._job_queue = True
-                cond.notify_all()
-                while self._job_queue is not False:
-                    cond.wait(timeout=1)
+        self.check_exit()
 
-            # mark script as running again
-            self.state = AhkState.RUNNING
-            cond.notify_all()
+        if self._initialized:
+            # request the currently-paused script to go into persistent mode
+            self._queue.put(None)
 
-            # run the script
-            user_script: str = self.communicator.create_user_script(script)
-            self._add_script(user_script, runwait=2)
+        # run the new script
+        user_script: str = self.communicator.create_user_script(script_lines)
+        self._add_script(user_script, runwait=2)
 
-            # wait for it to pass control back to this thread.
-            while self.state == AhkState.RUNNING:
-                cond.wait(timeout=1)
+        while True:
+            try:
+                self._addscript_queue.get(timeout=0.5)
+            except Empty:
+                self.check_exit()
+                continue
+            self.check_exit()
+            break
 
     def _add_script(self, script: str, runwait) -> None:
         ahkdll.add_script(script, c_int(runwait), self._thread_id)
+
+    def check_exit(self):
+        if self._exit_code is None:
+            return
+        if self._exit_code == -1073741510:
+            raise KeyboardInterrupt() from None
+        else:
+            raise ExitApp(self._exit_reason, self._exit_code) from None
 
     def add_hotkey(self, factory: HotkeyFactory):
         factory.inst = self
         factory.create()
 
-    def _match_state(self, state):
-        if self.state == state:
-            return True
-        elif state != self.state == AhkState.CLOSED:
-            assert self._exit_code is not None
-            raise ExitApp(self._exit_reason, self._exit_code)
+    def run_forever(self) -> NoReturn:
 
-    def run_forever(self) -> None:
-        with (cond := self._autoexec_condition):
-            # indicate to Ahk's main thread that it can go into persistent mode
-            self._job_queue = True
-            self._autoexec_condition.notify_all()
-            while not self.state == AhkState.CLOSED:
-                # Timeout allows for KeyboardInterrupts if you're in the main thread.
-                cond.wait(timeout=1)
+        # request the currently-paused script to go into persistent mode
+        self._queue.put(None)
+        while True:
+            sleep(0.5)
+            self.check_exit()  # raises ExitApp or KeyboardInterrupt when done
 
     def _call_autoexec(self, arg_data: c_wchar_p):
-        cond = self._autoexec_condition
-        with cond:
-            while self._job_queue is not False:
-                cond.wait(timeout=1)
-            self._job_queue = job = arg_data
-            cond.notify_all()
-            while self._job_queue is arg_data:
-                cond.wait(timeout=1)
+        fut = Future[None]()
+        assert self._queue.empty()
+        self._queue.put((arg_data, fut))
+
+        while True:
+            try:
+                fut.result(timeout=0.5)
+            except TimeoutError:
+                self.check_exit()
+                continue
+            self.check_exit()
+            break
+
+    # @contextmanager
+    # def mark_safe_thread(self) -> Generator[None, None, None]:
+    #     id = threading.get_ident()
+    #     new = id in self._safe_threads
+    #     self._safe_threads.add(id)
+    #     try:
+    #         yield
+    #     finally:
+    #         if new:
+    #             self._safe_threads.remove(id)
 
     def _autoexec_thread_callback(self):
-        with (cond := self._autoexec_condition):
-            self.state = AhkState.IDLE
-            cond.notify_all()
 
-            while True:
-                cond.wait_for(lambda: self._job_queue is not False)
-                job: bool | c_wchar_p = self._job_queue
+        # wake up python's main thread
+        self._addscript_queue.put(None)
 
-                assert job is not False
+        while True:
+            task = self._queue.get()
 
-                # set to True if something has been appended to the script.
-                if job is True:
-                    self._job_queue = False
-                    cond.notify_all()
-                    return
-                else:
-                    self.communicator.call_func(job)
-                    self._job_queue = False
-                    cond.notify_all()
+            # set to None if something has been appended to the script.
+            if task is None:
+                return
+            else:
+                job, fut = task
+                self.communicator.call_func(job)
+                fut.set_result(None)
 
     def call_method(
         self,
@@ -147,17 +163,21 @@ class AhkInstance:
         kwargs: dict[str, Any] | None = None,
         factory: AhkObjFactory | None = None,
     ) -> Any:
+        self.check_exit()
+
         if factory is None:
             factory = AhkObjFactory()
         factory.inst = self
 
-        thread_type = thread_state.get_thread_type(self)
-        if thread_type == "ahk":
-            call = self.communicator.call_func
-        elif thread_type == "external":
-            call = self.communicator.call_func_threadsafe
-        else:  # thread_type == 'autoexec'
+        thread = threading.get_ident()
+        if self._py_thread_id == thread:
             call = self._call_autoexec
+
+        elif thread == self._ahk_mainthread:  # TODO: thread safety
+            call = self.communicator.call_func
+
+        else:
+            call = self.communicator.call_func_threadsafe
 
         return self.communicator.call_method(obj, method, args, kwargs, factory, call)
 
@@ -175,13 +195,14 @@ class AhkInstance:
         if obj._ahk_ptr is not None:
             self.communicator.free_ahk_obj(obj._ahk_ptr)
 
-    def _exit_app_callback(self, reason, code):
-        with self._autoexec_condition:
-            self._exit_code = code
-            self._exit_reason = reason
-            self.state = AhkState.CLOSED
-            self._autoexec_condition.notify_all()
-            return 0
+    def _post_init_callback(self):
+        self._ahk_mainthread = threading.get_ident()
+        self._initialized = True
+
+    def _exit_app_callback(self, reason: str, code: int):
+        self._exit_reason = reason
+        self._exit_code = code
+        return 0
 
     def _error_callback(self, e):
         if isinstance(e, BaseException):
@@ -204,11 +225,14 @@ class AhkInstance:
         args = [vfd(arg, factory=factory) for arg in data["args"]]
         kwargs = {}
         # kwargs = {k: vfd(v, factory=factory) for k, v in data["kwargs"].items()}
+        # TODO: kwargs
 
         if method_name:
             func = getattr(obj, method_name)
         else:
             func = obj
+
+        # print(f"calling {func}")
 
         try:
             ret_val = func(*args, **kwargs)

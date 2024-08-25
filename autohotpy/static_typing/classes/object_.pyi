@@ -3,7 +3,9 @@ from typing import Any, Iterable, Self
 from autohotpy.static_typing.classes import BoolInt
 
 class Object:
-    def __init__(self): ...
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
     def Clone(self) -> Self:
         """Returns a shallow copy of an object."""
 

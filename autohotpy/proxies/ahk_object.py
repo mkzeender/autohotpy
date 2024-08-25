@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Iterator
 
 from autohotpy import exceptions
+from autohotpy._unset_type import UNSET
 from autohotpy.proxies._cached_prop import cached_prop
 from autohotpy.proxies._copying import reduce_ahk_obj
 from autohotpy.proxies._seq_iter import fmt_item, iterator
@@ -9,13 +10,12 @@ from autohotpy.proxies._seq_iter import fmt_item, iterator
 
 if TYPE_CHECKING:
     from autohotpy.ahk_instance import AhkInstance
-    from autohotpy.proxies.var_ref import VarRef
 
 
 def _demangle(name: str) -> str:
     if name.endswith("__"):
         return name
-    lead, sep, end = name.rpartition("__")
+    _, sep, end = name.rpartition("__")
     return sep + end
 
 
@@ -63,22 +63,25 @@ class AhkObject:
         else:
             self._ahk_instance.set_attr(self, _demangle(__name), __value)
 
+    def __delattr__(self, __name: str) -> None:
+        self.__setattr__(__name, UNSET)
+
     def __dir__(self):
-        def _dir():
-            obj = self
-            while True:
-                try:
-                    yield from obj.OwnProps()
-                    obj = self._ahk_instance.get_attr(
-                        obj,
-                        "base",
-                    )
-                except AttributeError:
-                    break
+        seen = set()
 
-            yield from super().__dir__()
+        obj = self
+        while True:
+            try:
+                seen.update(obj.OwnProps())
+                obj = self._ahk_instance.get_attr(
+                    obj,
+                    "base",
+                )
+            except AttributeError:
+                break
 
-        return set(_dir())
+        seen.update(super(AhkObject, self).__dir__())
+        return seen
 
     def __reduce__(self) -> str | tuple[Any, ...]:
         return reduce_ahk_obj(self)
@@ -113,9 +116,19 @@ class AhkObject:
     def __repr__(self):
         if self._ahk_ptr is None:
             return super().__repr__()
-        if self._ahk_type_name in ("Func", "Class"):
-            return f"ahk.{self.__name__}"
-        return f"<Ahk {self._ahk_type_name} object at {self._ahk_ptr:#x}>"
+        if self._ahk_type_name in ("Func", "Class", "Prototype"):
+            return f"ahk.{self._ahk_name}"
+        if self._ahk_type_name == "Object":
+            return f"ahk.Object({', '.join(name + '=' + repr(getattr(self, name)) for name in self.OwnProps())})"
+        if self._ahk_type_name == "Array":
+            return f"ahk.Array({', '.join(repr(elt) for elt in self)})"
+        # if self._ahk_type_name == "Map": TODO: fix this
+        #     dct = dict(self.items())
+        #     if all(isinstance(k, str) for k in dct):
+        #         return f"ahk.Map({', '.join(name + '=' + repr(v) for name, v in dct.items())})"
+
+        #     return f"<ahk.Map({dct!r})"
+        return f"<ahk.{self._ahk_type_name} object at {self._ahk_ptr:#x}>"
 
     def __getitem__(self, item) -> Any:
         return self._ahk_instance.call_method(
@@ -127,8 +140,28 @@ class AhkObject:
             None, "_py_setitem", (self, value, *fmt_item(item))
         )
 
+    def __delitem__(self, item):
+        self.__setitem__(item, UNSET)
+
+    def __contains__(self, item):
+        self._ahk_instance.call_method(self, "Has", (item,))
+
     def __iter__(self) -> Iterator:
-        return iterator(self, 1)  # type: ignore
+        return iterator(self, 1)  # type: ignore # TODO: fix this
+
+    def __len__(self) -> int:
+        try:
+            return self.Length
+        except AttributeError:
+            try:
+                return self.Count
+            except AttributeError:
+                raise NotImplementedError(
+                    f'"{self._ahk_type_name}" object does not have a length.'
+                )
+
+    def __bool__(self) -> bool:
+        return True  # TODO: fix bool operators?
 
     def __instancecheck__(self, instance: Any) -> bool:
         if self._ahk_type_name == "Class":
@@ -140,17 +173,28 @@ class AhkObject:
         elif self._ahk_type_name == "Array":
             return any(isinstance(instance, cls) for cls in self)
 
-        raise TypeError("isinstance() arg 2 must be a type, Array, tuple, or union")
+        raise TypeError("isinstance() arg 2 must be a type, array, tuple, or union")
 
-    def __subclasscheck__(self, subclass: type) -> bool:
-        return bool()
+    def __subclasscheck__(self, subcls: type) -> bool:
+        if self._ahk_type_name == "Class":
+            if not isinstance(subcls, AhkObject):
+                return False
+            return bool(
+                subcls._ahk_instance.call_method(
+                    None, "_py_subclasscheck", (subcls, self)
+                )
+            )
+        elif self._ahk_type_name == "Array":
+            return any(issubclass(subcls, basecls) for basecls in self)
+
+        else:
+            raise ValueError(
+                f"issubclass() arg 2 must be a type, Array, tuple, or union"
+            )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, AhkObject):
-            return self._ahk_ptr == other._ahk_ptr or (
-                self._ahk_type_name == "Class" == other._ahk_type_name
-                and self._ahk_name == other._ahk_name
-            )
+            return self._ahk_ptr == other._ahk_ptr
         elif isinstance(other, str) and self._ahk_type_name == "Class":
             return self._ahk_name == other
 

@@ -21,6 +21,7 @@ py-modules = ["autohotpy"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
+timeout = 30
 
 [tool.pyright]
 include = []
@@ -35,7 +36,7 @@ ignore = ["src/oldstuff"]
 defineConstant = { DEBUG = true }
 stubPath = "src/stubs"
 
-reportMissingImports = true
+reportMissingImports = false
 reportMissingTypeStubs = false
 
 pythonVersion = "3.12"

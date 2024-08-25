@@ -1,6 +1,5 @@
 import argparse
 
-from autohotpy.ahk_run import run_str
 from autohotpy import ahk
 
 
@@ -26,4 +25,4 @@ def main(*args: str):
     if space.run_str:
         ahk[space.SCRIPT]
     else:
-        run_str(f"#include {space.SCRIPT}")
+        ahk[f"#include {space.SCRIPT}"]

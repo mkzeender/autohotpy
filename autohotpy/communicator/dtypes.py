@@ -7,15 +7,18 @@ from typing import Any
 
 class DTypes(StrEnum):
     NONE = auto()
+    UNSET = auto()
     INT = auto()
     FLOAT = auto()
     STR = auto()
     VARREF = auto()
     AHK_OBJECT = auto()
-    AHK_IMMORTAL = auto()
+    AHK_MAP = auto()
+    AHK_ARRAY = auto()
+    # AHK_IMMORTAL = auto()
     PY_OBJECT = auto()
-    PY_IMMORTAL = auto()
-    CLASS = auto()
+    # PY_IMMORTAL = auto()
+    # CLASS = auto()
     ERROR = auto()
 
 
@@ -36,10 +39,12 @@ class DTypesFut(Enum):
     FLOAT = DT(float)
     STR = DT(str)
     AHK_OBJECT = DT(None)
-    AHK_IMMORTAL = DT(None)
+    AHK_MAP = DT(None)
+    AHK_ARRAY = DT(None)
+    # AHK_IMMORTAL = DT(None)
     PY_OBJECT = DT(None)
-    PY_IMMORTAL = DT(None)
-    CLASS = DT(type)
+    # PY_IMMORTAL = DT(None)
+    # CLASS = DT(type)
     ERROR = DT(None)
 
     @nonmember

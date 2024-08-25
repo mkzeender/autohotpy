@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from time import perf_counter
 
 from autohotpy import ahk
-import os
 
 # ahk.include(r"testit.ahk")
 
@@ -31,6 +30,16 @@ class Wut:
     foo: dict
 
 
+def import_typing():
+    from autohotpy import ahk
+
+    ahk["hi"]
+
+    ahk.Array
+
+    from autohotpy.ahk import VarRef
+
+
 def main():
     # ahk["^q" :: ahk.ExitApp]
     # ahk["^h" :: ahk.caller]
@@ -56,6 +65,8 @@ def main():
     # print(ahk._Python.on_error(Exception("hi")))
 
     # print(f"caller returned {ahk.caller('weee')}")
+
+    ahk.MsgBox("hi")
 
     ahk.run_forever()
 
