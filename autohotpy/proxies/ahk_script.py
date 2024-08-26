@@ -20,7 +20,7 @@ class AhkScript(AhkObject):
         """Run the provided file. The ".ahk" extension can be omitted."""
         self._ahk_instance.add_script(*(f"#include {file}" for file in script_files))
 
-    def run_forever(self) -> None:
+    def run_forever(self) -> NoReturn:
         self._ahk_instance.run_forever()
 
     def __getitem__(self, item: str | slice) -> Callable:

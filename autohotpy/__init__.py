@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     ahk = autohotpy.static_typing.AhkBuiltins()
 
 
-__all__ = ["ahk", "get_ahk", "Python", "config", "UNSET", "iterator"]
+__all__ = ["ahk", "Python", "config", "UNSET", "iterator"]
 
 
 def __getattr__(__name):
