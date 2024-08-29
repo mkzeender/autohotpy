@@ -1,9 +1,26 @@
 # Autohotpy
-This is still in development, some features will not work as described, and everything is subject to change.
+This is still in development, some features will not work as described, and everything is subject to change. Please post suggestions and report bugs in the [issues tab](https://github.com/mkzeender/autohotpy/issues).
 
 For AutoHotkey users, this serves as a way to use powerful python libraries in your AutoHotkey scripts. The python ecosystem is very well-developed -- there's a library for everything -- and is much easier to use than COM objects and DLLCalls. See [using Python from an AHK script](#using-python-from-an-ahk-script).
 
-For Python users, AutoHotkey is a very intelligent automation language, and I find it is more intuitive, consistent, and human-friendly than i.e. pywinauto. Other python libraries have used 
+For Python users, AutoHotkey is a very intelligent automation language, and I find it is more intuitive, consistent, and human-friendly than python for automation- and hotkey- related tasks.
+
+## Why this, and not __________?
+
+This of course isn't the first Python automation library, nor is it the first bridge between AHK and Python. I am making this because I was dissatisfied with the alternatives:
+
+1. Native python packages like ```pywinauto``` are not as powerful, reliable, or high-level as AutoHotkey.
+
+1. The python package ```ahk``` uses separate processes for hotkeys and for calling functions, which breaks certain functionality such as ```KeyWait()```, and is also slower.
+
+1. The python package ```AutoHotkey.py``` is the most similar to this one, but it is not inherently thread safe, and it has its own API that is separate from the AutoHotkey language.
+
+1. The above packages use AHK 1.1, ```autohotpy``` uses AHK 2.0.
+
+1. The above packages do not let you use Python and AHK functions, classes, and objects interchangeably.
+
+1. The above packages do not allow you to embed Python into AHK scripts.
+
 
 ## Using AHK from a Python script
 Import the module, and use any autohotkey function, class, object, etc. Refer to the [Autohotkey built-in functions and classes](https://www.autohotkey.com/docs/v2/lib/index.htm).
