@@ -1,13 +1,10 @@
-from typing import Any, Literal, Self, overload, override
-from autohotpy.static_typing.classes import BoolInt, Nothing
+from typing import Literal, Self, overload
+from autohotpy.static_typing.classes import BoolInt, Nothing, object_
 from autohotpy.static_typing.classes.func import Enumerator
-from autohotpy.static_typing.classes.protocols import DoubleIterable, SingleIterable
 
-class Map[KT, VT](SingleIterable[KT], DoubleIterable[KT, VT]):  # TODO: docs?S
+class Map[KT, VT](object_.Object):  # TODO: docs?S
     @overload
-    def __new__[
-        SelfT: Map
-    ](
+    def __new__[SelfT: Map](
         cls: type[SelfT],
         key1: KT = ...,
         value1: VT = ...,

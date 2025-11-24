@@ -1,10 +1,8 @@
 from autohotpy import ahk
 from pickle import dumps, loads
-import pytest as tst
 
 
 def test_obj():
-
     objct = ahk.Object()
     objct.fck = "10"
     pk = dumps(objct)
@@ -15,7 +13,6 @@ def test_obj():
 
 
 def test_array():
-
     arr1 = ahk.Array(3, 4, 5, [])
 
     pk = dumps(arr1)

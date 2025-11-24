@@ -5,6 +5,7 @@ class Buffer(Object):
     """
     Encapsulates a block of memory for use with advanced techniques such as DllCall, structures, StrPut and raw file I/O.
     """
+    def __init__(self, byte_count: int, /): ...
 
     Ptr: int
     Size: int

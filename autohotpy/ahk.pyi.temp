@@ -8,10 +8,6 @@ from autohotpy.static_typing.classes import (
     VarRef as VarRef,
 )
 
-Integer = int
-Float = float
-String = str
-
 # -------
 # Objects
 # -------
@@ -45,3 +41,11 @@ from autohotpy.static_typing.classes.com_obj import (
     ComObject as ComObject,
     ComObjArray as ComObjArray,
 )
+
+# -----------
+# Shared types
+# -----------
+
+Integer = int
+Float = float
+String = str

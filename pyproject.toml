@@ -42,6 +42,12 @@ reportMissingTypeStubs = false
 pythonVersion = "3.12"
 pythonPlatform = "Windows"
 
+[dependency-groups]
+dev = [
+    "pandas>=2.3.3",
+    "pytest>=9.0.1",
+]
+
 # executionEnvironments = [
 #   { root = "src/web", pythonVersion = "3.5", pythonPlatform = "Windows", extraPaths = [ "src/service_libs" ] },
 #   { root = "src/sdk", pythonVersion = "3.0", extraPaths = [ "src/backend" ] },

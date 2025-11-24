@@ -2,7 +2,7 @@
 /.vscode
 /AutoHotkey_v1.dll
 /__pycache__
-
+out.csv
 
 
 # Byte-compiled / optimized / DLL files

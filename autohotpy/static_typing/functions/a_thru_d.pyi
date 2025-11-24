@@ -1,4 +1,4 @@
-from typing import Callable, Literal, overload
+from typing import Any, Callable, Literal, Never, overload
 from autohotpy.proxies.var_ref import VarRef
 
 from autohotpy.static_typing.classes import (
@@ -13,9 +13,11 @@ from autohotpy.static_typing.classes import (
     Number,
     Nothing,
     MouseButton,
+    func,
+    gui,
 )
 
-class AThruD:
+class _Functions:
     @staticmethod
     def abs[NumType: Number](n: NumType, /) -> NumType:
         """
@@ -133,9 +135,7 @@ class AThruD:
         """Retrieves a registered COM object."""
 
     @staticmethod
-    def ComObjConnect[
-        ComValT
-    ](
+    def ComObjConnect[ComValT](
         ComObj: com_obj.ComValue[ComValT], PrefixOrSink: str | object_.Object = ..., /
     ) -> Nothing:
         """Connects a COM object's event source to the script, enabling events to be handled."""
@@ -636,3 +636,205 @@ class AThruD:
     def DriveSetLabel(drive: str, new_label: str = ...) -> Nothing: ...
     @staticmethod
     def DriveUnlock(drive: str) -> Nothing: ...
+    @staticmethod
+    def Edit() -> None:
+        """Opens the current script for editing in the default editor."""
+
+    @staticmethod
+    def EditGetCurrentCol(
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> int:
+        """Returns the column number in an Edit control where the caret (text insertion point) resides."""
+
+    @staticmethod
+    def EditGetCurrentLine(
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> int:
+        """Returns the line number in an Edit control where the caret (text insert point) resides."""
+
+    @staticmethod
+    def EditGetLine(
+        N: int,
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> str:
+        """Returns the text of the specified line in an Edit control"""
+
+    @staticmethod
+    def EditGetLineCount(
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> int:
+        """Returns the number of lines in an Edit control."""
+
+    @staticmethod
+    def EditGetSelectedText(
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> str:
+        """Returns the selected text in an Edit control."""
+
+    @staticmethod
+    def EditPaste(
+        string: str,
+        Control: protocols.WinTitleFinder,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> Nothing:
+        """Pastes the specified string at the caret (text insertion point) in an Edit control."""
+
+    @staticmethod
+    def EnvGet(EnvVar: str) -> str:
+        """Retrieves the value of the specified environment variable."""
+
+    @staticmethod
+    def EnvSet(EnvVar: str, value: str = ...) -> Nothing:
+        """Writes a value to the specified environment variable."""
+
+    @staticmethod
+    def Exit(exitcode: int = ...) -> Never:
+        """Exits the current thread."""
+
+    @staticmethod
+    def ExitApp(exitcode: int = ...) -> Never:
+        """Terminates the script."""
+
+    @staticmethod
+    def Exp(N: Number) -> float:
+        """Returns the result of raising e (which is approximately 2.71828182845905) to the Nth power."""
+
+    # TODO: File...() operations
+    # @staticmethod
+    # def FileAppend(Text: str , Filename: str=..., Options:str=...) -> Nothing:
+    #     """Writes text or binary data to the end of a file (first creating the file, if necessary)."""
+
+    # @staticmethod
+    # def
+
+    @staticmethod
+    def FileSelect(
+        Options: str | int = ...,
+        default_location: str = ...,
+        Title: str = ...,
+        Filter: str = ...,
+        /,
+    ) -> str | array.Array[str]:
+        """Displays a standard dialog that allows the user to open or save file(s)."""
+
+    @staticmethod
+    def Floor(N: Number, /) -> int:
+        """Returns the specified number rounded down to the nearest integer (without any .00 suffix)."""
+
+    @staticmethod
+    def Format(FormatStr: str, *Values: str | int | float) -> str:
+        """Formats a variable number of input values according to a format string."""
+
+    @staticmethod
+    def FormatTime(YYYYMMDDHH24MISS: str = ..., Format: str = ..., /) -> str:
+        """Transforms a YYYYMMDDHH24MISS timestamp into the specified date/time format."""
+
+    @staticmethod
+    def GetKeyName(KeyName: str) -> str:
+        """Retrieves the name/text of a key."""
+
+    @staticmethod
+    def GetKeyVK(KeyName: str) -> int:
+        """Retrieves the virtual key code of a key."""
+
+    @staticmethod
+    def GetKeySC(KeyName: str) -> int:
+        """Retrieves the scan code of a key."""
+
+    @staticmethod
+    def GetKeyState(KeyName: str, Mode: str = ...) -> Bool | float | int | Nothing:
+        """Returns 1 (true) or 0 (false) depending on whether the specified keyboard key or mouse/controller button is down or up. Also retrieves controller status."""
+
+    @staticmethod
+    def GetMethod(Value: Any, Name: str = ..., ParamCount: int = ...) -> func.Func:
+        """Retrieves the implementation function of a method."""
+
+    @staticmethod
+    def GroupActivate(GroupName: str, Mode: str = ...) -> int:
+        """Activates the next window in a window group that was defined with GroupAdd."""
+
+    @staticmethod
+    def GroupAdd(
+        GroupName: str,
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+        ExcludeTitle: str = ...,
+        ExcludeText: str = ...,
+    ) -> Nothing:
+        """Adds a window specification to a window group, creating the group if necessary."""
+
+    @staticmethod
+    def GroupClose(GroupName: str, mode: str = ...) -> Nothing:
+        """Closes the active window if it was just activated by GroupActivate or GroupDeactivate. It then activates the next window in the series. It can also close all windows in a group."""
+
+    @staticmethod
+    def GroupDeactivate(GroupName: str, mode: str = ...) -> Nothing:
+        """Similar to GroupActivate except activates the next window not in the group."""
+
+    @staticmethod
+    def GuiCtrlFromHwnd(Hwnd: int) -> gui.Gui.Control | Nothing:
+        """Retrieves the GuiControl object of a GUI control associated with the specified window handle."""
+    @staticmethod
+    def GuiFromHwnd(Hwnd: int, RecurseParent: Bool = ...) -> gui.Gui:
+        """Retrieves the Gui object of a GUI window associated with the specified window handle."""
+    @staticmethod
+    def HasBase(Value: Any, BaseObj: Any) -> BoolInt:
+        """Returns a non-zero number if the specified value is derived from the specified base object."""
+    @staticmethod
+    def HasMethod(Value: Any, Name: str = ..., ParamCount: int = ...) -> BoolInt:
+        """Returns a non-zero number if the specified value has a method by the specified name."""
+    @staticmethod
+    def HasProp(Value: Any, Name: str) -> BoolInt:
+        """Returns a non-zero number if the specified value has a property by the specified name."""
+
+    @staticmethod
+    def HotIf(predicate: str | Callable[[str], BoolInt]) -> Nothing:
+        """Specifies the criteria for subsequently created or modified hotkey variants and hotstring variants."""
+
+    @staticmethod
+    def HotIfWinActive(
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+    ) -> Nothing:
+        """Specifies the criteria for subsequently created or modified hotkey variants and hotstring variants."""
+    @staticmethod
+    def HotIfWinExist(
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+    ) -> Nothing:
+        """Specifies the criteria for subsequently created or modified hotkey variants and hotstring variants."""
+    @staticmethod
+    def HotIfWinNotActive(
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+    ) -> Nothing:
+        """Specifies the criteria for subsequently created or modified hotkey variants and hotstring variants."""
+    @staticmethod
+    def HotIfWinNotExist(
+        WinTitle: protocols.WinTitleFinder = ...,
+        WinText: str = ...,
+    ) -> Nothing:
+        """Specifies the criteria for subsequently created or modified hotkey variants and hotstring variants."""

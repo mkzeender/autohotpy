@@ -4,6 +4,7 @@ from .convenience.py_lib import pylib as Python
 from .ahk_run import get_ahk
 from ._unset_type import UNSET
 from .proxies._seq_iter import iterator
+import sys
 
 
 if TYPE_CHECKING:
@@ -20,8 +21,6 @@ def __getattr__(__name):
     if __name == "ahk":
         ahk = get_ahk()
         return ahk
-
-    import sys
 
     raise AttributeError(
         f"autohotpy has no attribute named {__name}",

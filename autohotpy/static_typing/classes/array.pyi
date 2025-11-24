@@ -1,8 +1,7 @@
-from typing import Iterator, overload
+from typing import Iterator, MutableSequence, overload
 from autohotpy.static_typing.classes import Nothing, object_
-from autohotpy.static_typing.classes.protocols import DoubleIterable, SingleIterable
 
-class Array[T](SingleIterable[T], DoubleIterable[int, T], object_.Object):
+class Array[T](MutableSequence[T], object_.Object):
     """An Array object contains a list or sequence of values."""
 
     Length: int
@@ -37,5 +36,5 @@ class Array[T](SingleIterable[T], DoubleIterable[int, T], object_.Object):
         """Removes items from an array."""
 
     def __iter__(self) -> Iterator[T]: ...
-    def __getitem__(self) -> T: ...
-    def __setitem__(self, value: T): ...
+    def __getitem__(self, key: int) -> T: ...  # type: ignore
+    def __setitem__(self, key: int, value: T): ...  # type: ignore
